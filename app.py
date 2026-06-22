@@ -210,7 +210,7 @@ açaí -> acai-frozen-bowl-equipment
 
 # --- FUNÇÕES DE RESPOSTA DA IA ---
 
-def perguntar_ia(pergunta, produto, nome, idioma, url_esc):
+def perguntar_ia(pergunta, produto, nome, idioma):
     ficha_json = produto.get("ficha_tecnica", {})
     tem_ficha = len(ficha_json) > 0
     preco_info = produto.get("preco", "Sob Consulta / Não listado publicamente")
@@ -227,7 +227,7 @@ def perguntar_ia(pergunta, produto, nome, idioma, url_esc):
             f"5. Você é um consultor de vendas da Finamac. Nunca use respostas genéricas ou teóricas se houver produtos específicos na lista de {produto} ou {obter_produtos_da_colecao} fornecida no contexto. \n"
             "6. Se o contexto trouxer modelos específicos (ex: linha PP-60, PP-110, PP-200), você deve citar esses nomes comerciais exatos na resposta e explicar para que servem. \n"
             "7. Quando o produto selecionado for um combo, kit ou versão (como 'Versão Intermediária PLUS'), você não pode tratá-lo como um produto simples. É obrigatório abrir a descrição e listar para o cliente o que está incluso (ex: quantidade de formas, extratores, alinhadores e capacidade de produção)."
-            f"Antes de declarar que um produto não existe no catálogo, você DEVE varrer todo o objeto JSON fornecido. Se o termo buscado pelo usuário (ex: pasteurizador) estiver listado nos títulos ou URLs do array {produto} ou {obter_produtos_da_colecao}, você deve citar esses modelos pelo nome, mesmo que a {url_esc} pelo sistema traga uma ficha técnica de outro produto."
+            f"Antes de declarar que um produto não existe no catálogo, você DEVE varrer todo o objeto JSON fornecido. Se o termo buscado pelo usuário (ex: pasteurizador) estiver listado nos títulos ou URLs do array {produto} ou {obter_produtos_da_colecao}, você deve citar esses modelos pelo nome, mesmo que a url escolhida pelo sistema traga uma ficha técnica de outro produto."
             f"ex: [{produto.get('titulo', 'Ver produto')}]({produto.get('url_original', '')}).\n\n"
             f"DADOS REAIS DO PRODUTO:\n"
             f"Equipamento: {produto.get('titulo', 'Não informado')}\n"
