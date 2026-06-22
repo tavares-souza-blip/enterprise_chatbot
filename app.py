@@ -428,8 +428,8 @@ if pesquisa := st.chat_input("Digite sua pergunta sobre as máquinas Finamac..."
                 st.session_state.get("historico_ia", [])
             )
 
-            st.write("DEBUG tipo_bruto =", tipo_bruto)
-            st.write("DEBUG produto_sugerido =", produto_sugerido)            
+            #st.write("DEBUG tipo_bruto =", tipo_bruto)
+            #st.write("DEBUG produto_sugerido =", produto_sugerido)            
 
             MAPA_TIPO = {
                 "recomendacao_produtos": "CONSULTIVO",
@@ -453,7 +453,7 @@ if pesquisa := st.chat_input("Digite sua pergunta sobre as máquinas Finamac..."
             #if produto_sugerido.lower() in categorias_genericas:
             if any(termo in pesquisa_lower for termo in ["pasteuriz", "sorvete", "gelato", "picol", "acai", "chocolate"]):
                 categoria_detectada = detectar_categoria(pesquisa)              
-                st.sidebar.write("\nDEBUG categoria_detectada =", categoria_detectada)
+                #st.sidebar.write("\nDEBUG categoria_detectada =", categoria_detectada)
                 if categoria_detectada:
                     url_col = f"https://finamac.com/pt/collections/{categoria_detectada}"
                     prod_internos = obter_produtos_da_colecao(http_client, url_col)
@@ -553,7 +553,7 @@ if pesquisa := st.chat_input("Digite sua pergunta sobre as máquinas Finamac..."
                     if cat:
                         url_col = f"https://finamac.com/pt/collections/{cat}"
                         prod_internos = obter_produtos_da_colecao(http_client, url_col)
-                        st.write("DEBUG quantidade produtos =", len(prod_internos))
+                        #st.write("DEBUG quantidade produtos =", len(prod_internos))
                         for p in prod_internos[:10]:
                             st.write(" -", p["nome"])
                         if prod_internos:
@@ -568,8 +568,8 @@ if pesquisa := st.chat_input("Digite sua pergunta sobre as máquinas Finamac..."
                         st.session_state.modelos_listados = [] 
                 else:
                     res_busca = buscar_produto(http_client, prod_ext)
-                    st.write(res_busca)
-                    st.write("DEBUG produto extraido =", produto_extraido)
+                    #st.write(res_busca)
+                    #st.write("DEBUG produto extraido =", produto_extraido)
                     p_urls, c_urls = res_busca.get("produtos", []), res_busca.get("colecoes", [])
 
                     if not p_urls and not c_urls:
@@ -580,20 +580,18 @@ if pesquisa := st.chat_input("Digite sua pergunta sobre as máquinas Finamac..."
                         if p_urls:
                             url_esc = escolher_melhor_produto(p_urls, prod_ext)
                             produto = obter_produto(http_client, url_esc)
-                            st.write("URL ESCOLHIDA:", url_esc)
-                            st.write(
-                                "TITULO:",
-                                produto.get("titulo")
-                            )
-
-                            st.write(
-                                "QTD CAMPOS FICHA:",
-                                len(produto.get("ficha_tecnica", {}))
-                            )
-
-                            st.write(
-                                produto.get("ficha_tecnica", {})
-                            )
+                            #st.write("URL ESCOLHIDA:", url_esc)
+                            #st.write(
+                            #    "TITULO:",
+                            #    produto.get("titulo")
+                            #)
+                            #st.write(
+                            #    "QTD CAMPOS FICHA:",
+                            #    len(produto.get("ficha_tecnica", {}))
+                            #)
+                            #st.write(
+                            #    produto.get("ficha_tecnica", {})
+                            #)
 
                             print(produto)
 
