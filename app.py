@@ -210,7 +210,7 @@ açaí -> acai-frozen-bowl-equipment
 
 # --- FUNÇÕES DE RESPOSTA DA IA ---
 
-def perguntar_ia(pergunta, produto, nome, idioma):
+def perguntar_ia(pergunta, produto, nome, idioma, url_esc):
     ficha_json = produto.get("ficha_tecnica", {})
     tem_ficha = len(ficha_json) > 0
     preco_info = produto.get("preco", "Sob Consulta / Não listado publicamente")
