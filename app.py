@@ -283,7 +283,7 @@ def perguntar_ia_lista_colecao(pergunta, nome, titulo_colecao, produtos_lista, i
         f"MODELOS DISPONÍVEIS NESTA CATEGORIA:\n{lista}\n\n"
         f"Apresente a lista para o usuário de forma organizada em Markdown. Diga clara e explicitamente que ele pode escolher um modelo digitando o nome completo do equipamento ou indicando pela posição numérica na lista (ex: 'o primeiro', 'opção 3')."
         "Esses modelos são REAIS — cite-os diretamente, incluindo o link de cada um quando disponível. "
-        f"O link deve ser igual ao produto buscado em {buscar_produto}"    
+        f"O link deve ser igual ao produto buscado em {produtos_lista}"    
     )
 
     if "messages" not in st.session_state:
