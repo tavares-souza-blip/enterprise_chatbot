@@ -233,8 +233,9 @@ def perguntar_ia(pergunta, produto, nome, idioma):
             f"Equipamento: {produto.get('titulo', 'Não informado')}\n"
             f"Preço de Referência: {preco_info}\n"
             f"Especificações Técnicas (JSON): {ficha_json}\n"
-            f"Link Original: {produto.get('url_original', 'https://finamac.com/pt')}\n\n"
-            f"Contato autorizado: {CONTATO_COMERCIAL}"
+            f"Link Original: {produto.get('url_original', 'https://finamac.com/pt')}\n"
+            f"Contato autorizado: {CONTATO_COMERCIAL}\n\n"
+            f"Sempre que mencionar {CONTATO_COMERCIAL}, mande ao usuário o endereço do showroom em São Paulo, mas como um link de GPS. Endereço: [Avenida Nazaré 1657, São Paulo, São Paulo, 04263-200](https://maps.google.com/?q=Avenida+Nazaré+1657,+São+Paulo,+São+Paulo,+04263-200)"
         )    
     else:
         system_prompt = (
