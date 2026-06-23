@@ -206,8 +206,8 @@ def obter_produtos_da_colecao(http_client, url_colecao):
             RUIDO_HANDLES = [
                 "seal", "blade", "kit", "mold", "holder", "spare", "parts",
                 "service", "peca", "garantia", "packaging", "extrator",
-                "unmolding", "stick-insertion", "cooling-tower", "homogenizer",
-                "chilling", "pasteurization", "incorporator", "filling", "warranty"
+                "unmolding", "stick-insertion", "chilling", "warranty",
+                "tramontina"
             ]
             
             if "products" in dados:

@@ -20,10 +20,24 @@ st.caption("Ecossistema HTTPX estável com injeção de histórico unificado.")
 if "openai_client" not in st.session_state:
     st.session_state.openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-CONTATO_COMERCIAL = "vendas@finamac.com.br ou pelo telefone +55 11 98846-5990. Se preferir, faça uma visita ao nosso Showroom em São Paulo para conhecer nossos produtos pessoalmente!"
-system_prompt = {
-    f"Sempre que mencionar {CONTATO_COMERCIAL}, mande ao usuário o endereço do showroom em São Paulo, mas como um link de GPS. Endereço: [Avenida Nazaré 1657, São Paulo, São Paulo, 04263-200]; Link:(https://maps.google.com/?q=Avenida+Nazaré+1657,+São+Paulo,+São+Paulo,+04263-200)"
+ENDERECOS_FINAMAC = {
+    "BR": (
+        "Avenida Nazaré 1657, São Paulo, SP, 04263-200 — Brasil",
+        "https://maps.google.com/?q=Avenida+Nazaré+1657,+São+Paulo,+SP,+04263-200"
+    ),
+    "US": (
+        "11231 NW 20th Street, Unit 130, Miami, FL 33172 — USA",
+        "https://www.google.com/maps/search/?api=1&query=11231%20NW%2020th%20Street%2C%20Unit%20130%2C%20Miami%2C%20FL%2033172%2C%20USA"
+    ),
 }
+
+ENDERECO_PADRAO = ENDERECOS_FINAMAC["BR"]  # fallback se não identificar o país
+
+CONTATO_COMERCIAL = "vendas@finamac.com.br ou pelo telefone +55 11 98846-5990"
+
+SHOWROOM_LINK = "[Showroom São Paulo](https://maps.google.com/?q=Avenida+Nazaré+1657,+São+Paulo,+SP,+04263-200)"
+
+CONTATO_COMPLETO = f"{CONTATO_COMERCIAL} ou visite nosso {SHOWROOM_LINK}"
 
 CATEGORIAS_SLUGS_VALIDAS = {
     "ice-pops": ["picole", "picoleteira", "pop", "paleta", "ice pop", "artisanal", "artesanal", "producer", "produtora", "automatic", "automática", "industrial", "production", "produção"],
@@ -53,6 +67,32 @@ CATEGORIAS_SLUGS_VALIDAS = {
 # ─────────────────────────────────────────
 # LÓGICA DE NEGÓCIO E UTILITÁRIOS
 # ─────────────────────────────────────────
+def detectar_pais_usuario(pergunta: str, idioma: str) -> str:
+    resposta = st.session_state.openai_client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {
+                "role": "system",
+                "content": (
+                    "Identifique o país de origem do usuário com base na mensagem e no idioma.\n"
+                    "Responda SOMENTE com o código ISO do país (ex: BR, US, ES, MX, AR).\n"
+                    "Se não for possível identificar com segurança, responda: BR\n\n"
+                    "Exemplos:\n"
+                    "mensagem em inglês americano → US\n"
+                    "mensagem em português brasileiro → BR\n"
+                    "mensagem em espanhol com 'acá' ou 'vos' → AR\n"
+                    "mensagem em espanhol com 'acá' ou menção ao México → MX"
+                )
+            },
+            {"role": "user", "content": f"Idioma detectado: {idioma}\nMensagem: {pergunta}"}
+        ],
+        temperature=0.0
+    )
+    return resposta.choices[0].message.content.strip().upper()
+
+def montar_link_endereco(pais: str) -> str:
+    endereco_label, endereco_url = ENDERECOS_FINAMAC.get(pais, ENDERECO_PADRAO)
+    return f"[{endereco_label}]({endereco_url})"
 
 def formatar_preco_range(preco_float, idioma_usuario="pt"):
     inferior = preco_float * 0.80
@@ -79,7 +119,7 @@ def escolher_melhor_produto(urls, nome_buscado):
         "pós", "seal", "blade", "kit", "mold", "molde", "holder", "spare", "peca", "parts",
         "garantia", "warranty", "start-up", "startup", "prevetinva", "preventive", "service", 
         "packaging", "extrator", "unmolding", "stick-insertion", "cooling-tower", "homogenizer",
-        "chilling", "pasteurization", "incorporator", "filling"
+        "chilling", "pasteurization", "incorporator", "filling", "tramontina", "cinta"
         ]
     bonus = [
         "maquina", "machine", "producer", "freezer", "batch", "industrial", "picole", 
@@ -237,7 +277,7 @@ def perguntar_ia(pergunta, produto, nome, idioma):
             f"Preço de Referência: {preco_info}\n"
             f"Especificações Técnicas (JSON): {ficha_json}\n"
             f"Link Original: {produto.get('url_original', 'https://finamac.com/pt')}\n"
-            f"Contato autorizado: {CONTATO_COMERCIAL}\n\n"
+            f"Contato autorizado: {CONTATO_COMPLETO}\n\n"
         )    
     else:
         system_prompt = (
@@ -245,7 +285,7 @@ def perguntar_ia(pergunta, produto, nome, idioma):
             f"Idioma: {idioma}.\n\n"
             f"REGRA ABSOLUTA: As especificações detalhadas deste equipamento não estão disponíveis "
             f"no momento via scraping. NÃO invente dados técnicos. Se perguntado sobre potência, "
-            f"peso ou capacidade, informe que não foi possível localizar e redirecione para: {CONTATO_COMERCIAL}\n\n"
+            f"peso ou capacidade, informe que não foi possível localizar e redirecione para: {CONTATO_COMPLETO}\n\n"
             f"Equipamento consultado: {produto.get('titulo', 'Não informado')}\n"
             f"URL: {produto.get('url_original', 'https://finamac.com/pt')}"
         )
@@ -366,6 +406,13 @@ if pesquisa := st.chat_input("Digite sua pergunta sobre as máquinas Finamac..."
 
     pesquisa_lower = pesquisa.lower()
     idioma_detectado = detectar_idioma(pesquisa)
+    pais_usuario = detectar_pais_usuario(pesquisa, idioma_detectado)
+    link_endereco = montar_link_endereco(pais_usuario)
+
+    CONTATO_COMPLETO = (
+        f"vendas@finamac.com.br ou +55 11 98846-5990 "
+        f"ou visite nossa unidade mais próxima: {link_endereco}"
+    )
 
     resposta_gerada = ""
 
@@ -416,7 +463,7 @@ if pesquisa := st.chat_input("Digite sua pergunta sobre as máquinas Finamac..."
                 st.session_state.ultima_conversa = {"titulo": st.session_state.ultima_conversa["titulo"], "tipo_schema": "lista_colecao", "produtos": prod_internos}
                 st.session_state.modelos_listados = prod_internos
             else:
-                resposta_gerada = f"Não encontrei modelos ativos nesta categoria no momento. Contato Comercial: {CONTATO_COMERCIAL}"
+                resposta_gerada = f"Não encontrei modelos ativos nesta categoria no momento. Contato Comercial: {CONTATO_COMPLETO}"
 
         elif refinando_lista:
             lista_at = st.session_state.ultima_conversa.get("produtos", st.session_state.modelos_listados)
@@ -474,7 +521,7 @@ if pesquisa := st.chat_input("Digite sua pergunta sobre as máquinas Finamac..."
                     else:
                         resposta_gerada = (
                             f"Não encontrei modelos ativos nesta categoria no momento. "
-                            f"Contato Comercial: {CONTATO_COMERCIAL}"
+                            f"Contato Comercial: {CONTATO_COMPLETO}"
                         )
             else:
                 produto_extraido = (
@@ -496,7 +543,7 @@ if pesquisa := st.chat_input("Digite sua pergunta sobre as máquinas Finamac..."
                         tipo = "NOVO_PRODUTO"
 
                 if tipo == "OUT_OF_SCOPE":
-                    resposta_gerada = f"Desculpe, mas sou um assistente virtual exclusivo da Finamac e só posso responder a questões técnicas e comerciais sobre os nossos equipamentos de sorvete, picolé, açaí, chocolate e refrigeração comercial. Se precisar de um atendimento com nosso setor comercial, entre em contato com {CONTATO_COMERCIAL} Como posso ajudar no desenvolvimento do seu negócio hoje?"
+                    resposta_gerada = f"Desculpe, mas sou um assistente virtual exclusivo da Finamac e só posso responder a questões técnicas e comerciais sobre os nossos equipamentos de sorvete, picolé, açaí, chocolate e refrigeração comercial. Se precisar de um atendimento com nosso setor comercial, entre em contato com {CONTATO_COMPLETO} Como posso ajudar no desenvolvimento do seu negócio hoje?"
 
                 elif tipo == "CURSO":
                     resposta_gerada = st.session_state.openai_client.chat.completions.create(
@@ -515,7 +562,7 @@ if pesquisa := st.chat_input("Digite sua pergunta sobre as máquinas Finamac..."
                                     "que não estão disponíveis e nem presentes no site. "
                                     "Considere que, juntamente dos cursos em módulos, têm também "
                                     "livro de receitas para diferentes preparações do ramo."
-                                    f"\nContato comercial autorizado: {CONTATO_COMERCIAL}"
+                                    f"\nContato comercial autorizado: {CONTATO_COMPLETO}"
                                 )
                             },
                             {
@@ -536,7 +583,7 @@ if pesquisa := st.chat_input("Digite sua pergunta sobre as máquinas Finamac..."
                                     "Ajude o cliente a escolher o equipamento ideal "
                                     "com base em orçamento, espaço físico, capacidade "
                                     "de produção, público-alvo e tipo de produto."
-                                    f"\nContato comercial autorizado: {CONTATO_COMERCIAL}"
+                                    f"\nContato comercial autorizado: {CONTATO_COMPLETO}"
                                 )
                             },
                             {
@@ -564,7 +611,7 @@ if pesquisa := st.chat_input("Digite sua pergunta sobre as máquinas Finamac..."
                             st.session_state.ultima_conversa = {"titulo": cat, "tipo_schema": "lista_colecao", "produtos": prod_internos}
                             st.session_state.modelos_listados = prod_internos
                         else:
-                            resposta_gerada = f"Nosso catálogo digital para esta categoria está passando por uma atualização rápida no momento. Por favor, consulte os dados técnicos diretamente pelo e-mail: {CONTATO_COMERCIAL}"
+                            resposta_gerada = f"Nosso catálogo digital para esta categoria está passando por uma atualização rápida no momento. Por favor, consulte os dados técnicos diretamente pelo e-mail: {CONTATO_COMPLETO}"
                             st.session_state.modelos_listados = [] 
                     else:
                         resposta_gerada = perguntar_ia_generico(pesquisa,st.session_state.nome_usuario, st.session_state.catalogo_oficial, idioma_detectado)
@@ -576,7 +623,7 @@ if pesquisa := st.chat_input("Digite sua pergunta sobre as máquinas Finamac..."
                     p_urls, c_urls = res_busca.get("produtos", []), res_busca.get("colecoes", [])
 
                     if not p_urls and not c_urls:
-                        resposta_gerada = f"Não encontrei nenhum equipamento correspondente a '{prod_ext}' no catálogo digital do site oficial. Contato Comercial: {CONTATO_COMERCIAL}"
+                        resposta_gerada = f"Não encontrei nenhum equipamento correspondente a '{prod_ext}' no catálogo digital do site oficial. Contato Comercial: {CONTATO_COMPLETO}"
                         st.session_state.modelos_listados = []
                     else:
                         st.session_state.modelos_listados = [] 
