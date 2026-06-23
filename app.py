@@ -33,7 +33,7 @@ ENDERECOS_FINAMAC = {
 
 ENDERECO_PADRAO = ENDERECOS_FINAMAC["BR"]  # fallback se não identificar o país
 
-CONTATO_COMERCIAL = "vendas@finamac.com.br ou pelo telefone +55 11 98846-5990"
+CONTATO_COMERCIAL = "vendas@finamac.com.br ou pelo telefone +55 (11) 98846-5990"
 
 SHOWROOM_LINK = "[Showroom São Paulo](https://maps.google.com/?q=Avenida+Nazaré+1657,+São+Paulo,+SP,+04263-200)"
 
@@ -105,6 +105,17 @@ def formatar_preco_range(preco_float, idioma_usuario="pt"):
         txt_inferior = f"{inferior:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
         txt_superior = f"{superior:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
         return f"entre R$ {txt_inferior} e R$ {txt_superior}"
+
+def normalizar_modelo(pergunta):
+    pergunta = pergunta.lower()
+
+    pergunta = re.sub(
+        r'([a-z]+)[\s\-_]*(\d+)',
+        r'\1 \2',
+        pergunta
+    )
+
+    return pergunta
 
 def escolher_melhor_produto(urls, nome_buscado):
     nome_lower = nome_buscado.lower()
@@ -384,284 +395,301 @@ if "modelos_listados" not in st.session_state: st.session_state.modelos_listados
 if "nome_usuario" not in st.session_state: st.session_state.nome_usuario = None
 
 if not st.session_state.nome_usuario:
-    with st.form("nome_form"):
-        nome = st.text_input("Antes de começar os testes comerciais, qual é o seu nome?")
-        submit = st.form_submit_button("Entrar no Chat")
-        if submit and nome.strip():
-            st.session_state.nome_usuario = nome.strip()
-            saudacao = f"Prazer em te conhecer, {st.session_state.nome_usuario}! Sou o consultor virtual da Finamac. Como posso ajudar no seu negócio de gelados hoje?"
-            st.session_state.messages.append({"role": "assistant", "content": saudacao})
-            st.rerun()
-    st.stop()
-
-for msg in st.session_state.messages:
-    with st.chat_message(msg["role"]):
-        st.markdown(msg["content"])
-
-if pesquisa := st.chat_input("Digite sua pergunta sobre as máquinas Finamac..."):
+    with st.form("formulario_vazio"):
+        nome = st.text_input("Nome: *")
+        email = st.text_input("Email: *")
+        whatsapp = st.text_input("WhatsApp: *")
+        atuacao = st.text_input("Atua na área de gelados? *")
+        submitted = st.form_submit_button("Salvar")
     
-    st.session_state.messages.append({"role": "user", "content": pesquisa})
-    with st.chat_message("user"):
-        st.markdown(pesquisa)
+    if submitted: 
+        if not nome or not email or not whatsapp or not atuacao:
+            st.error("Os campos são obrigatórios para iniciar o atendimento. Por favor, preencha todos os campos.")
+            st.stop()
 
-    pesquisa_lower = pesquisa.lower()
-    idioma_detectado = detectar_idioma(pesquisa)
-    pais_usuario = detectar_pais_usuario(pesquisa, idioma_detectado)
-    link_endereco = montar_link_endereco(pais_usuario)
-
-    CONTATO_COMPLETO = (
-        f"vendas@finamac.com.br ou +55 11 98846-5990 "
-        f"ou visite nossa unidade mais próxima: {link_endereco}"
-    )
-
-    resposta_gerada = ""
-
-    with st.spinner("Consultando dados oficiais..."):
-        
-        texto_limpo = pesquisa.lower().strip()
-        if "turbo" in texto_limpo and "80" in texto_limpo:
-            prod_ext = "Turbo 80"
-            indice = None
-            interesse_confirmado = False
-            refinando_lista = False
         else:
-            prod_ext = extrair_produto(pesquisa)
-            
-            if prod_ext != "NONE":
+            with st.form("formulario"):
+                st.write("Obrigado por fornecer suas informações! Agora você pode iniciar a conversa com o consultor virtual.")
+                st.form_submit_button("Iniciar Conversa")
+                st.session_state.nome_usuario = nome.strip()
+                saudacao = f"Prazer em te conhecer, {st.session_state.nome_usuario}! Sou o consultor virtual da Finamac. Como posso ajudar no seu negócio de gelados hoje?" 
+                st.session_state.messages.append({"role": "assistant", "content": saudacao})
+
+                #st.write("Digite sua pergunta sobre as máquinas Finamac no campo abaixo e pressione Enter.")
+                #st.text_input("Digite sua pergunta:", key="pergunta_usuario")
+                st.session_state.inicializado = True
+                st.session_state.historico_ia.append({"role": "system", "content": f"Usuário: {nome.strip()}, Email: {email.strip()}, WhatsApp: {whatsapp.strip()}, Atua na área de gelados: {atuacao.strip()}"})
+                #st.form_submit_button("Obrigado! Agora você pode iniciar a conversa com o consultor virtual.") 
+
+else:
+    for msg in st.session_state.messages:
+        with st.chat_message(msg["role"]):
+            st.markdown(msg["content"])
+
+    if pesquisa := st.chat_input("Digite sua pergunta sobre as máquinas Finamac..."):
+
+        st.session_state.messages.append({"role": "user", "content": pesquisa})
+        with st.chat_message("user"):
+            st.markdown(pesquisa)
+
+        pesquisa_lower = pesquisa.lower()
+        idioma_detectado = detectar_idioma(pesquisa)
+        pais_usuario = detectar_pais_usuario(pesquisa, idioma_detectado)
+        link_endereco = montar_link_endereco(pais_usuario)
+
+        CONTATO_COMPLETO = (
+            f"vendas@finamac.com.br ou +55 11 98846-5990 "
+            f"ou visite nossa unidade mais próxima: {link_endereco}"
+        )
+
+        resposta_gerada = ""
+
+        with st.spinner("Consultando dados oficiais..."):
+
+            texto_limpo = pesquisa.lower().strip()
+            if "turbo" in texto_limpo and "80" in texto_limpo:
+                prod_ext = "Turbo 80"
                 indice = None
                 interesse_confirmado = False
                 refinando_lista = False
             else:
-                indice = detectar_referencia_posicional(pesquisa, st.session_state.modelos_listados)
-                interesse_confirmado = (st.session_state.ultima_conversa and 
-                                        st.session_state.ultima_conversa.get("tipo_schema") == "colecao" and 
-                                        usuario_confirmou_interesse(pesquisa))
-                refinando_lista = (st.session_state.ultima_conversa and 
-                                   st.session_state.ultima_conversa.get("tipo_schema") == "lista_colecao" and 
-                                   usuario_refina_lista(pesquisa, st.session_state.modelos_listados))
-        
-        # ─────────────────────────────────────────
-        # ÁRVORE DE DECISÃO EXECUTÁVEL
-        # ─────────────────────────────────────────
+                prod_ext = extrair_produto(pesquisa)
 
-        if indice is not None:
-            modelo_ref = st.session_state.modelos_listados[indice]
-            produto = obter_produto(http_client, modelo_ref["url"])
-            
-            preco_num = obter_preco(http_client, modelo_ref["url"])
-            if preco_num:
-                produto["preco"] = formatar_preco_range(preco_num, idioma_detectado)
-            
-            st.session_state.ultima_conversa = produto
-            resposta_gerada = perguntar_ia(pesquisa, produto, st.session_state.nome_usuario, idioma_detectado)
+                if prod_ext != "NONE":
+                    indice = None
+                    interesse_confirmado = False
+                    refinando_lista = False
+                else:
+                    indice = detectar_referencia_posicional(pesquisa, st.session_state.modelos_listados)
+                    interesse_confirmado = (st.session_state.ultima_conversa and 
+                                            st.session_state.ultima_conversa.get("tipo_schema") == "colecao" and 
+                                            usuario_confirmou_interesse(pesquisa))
+                    refinando_lista = (st.session_state.ultima_conversa and 
+                                       st.session_state.ultima_conversa.get("tipo_schema") == "lista_colecao" and 
+                                       usuario_refina_lista(pesquisa, st.session_state.modelos_listados))
 
-        elif interesse_confirmado:
-            url_col = st.session_state.ultima_conversa.get("url_original")
-            prod_internos = obter_produtos_da_colecao(http_client, url_col)
-            if prod_internos:
-                resposta_gerada = perguntar_ia_lista_colecao(pesquisa, st.session_state.nome_usuario, st.session_state.ultima_conversa["titulo"], prod_internos, idioma_detectado)
-                st.session_state.ultima_conversa = {"titulo": st.session_state.ultima_conversa["titulo"], "tipo_schema": "lista_colecao", "produtos": prod_internos}
-                st.session_state.modelos_listados = prod_internos
+            # ─────────────────────────────────────────
+            # ÁRVORE DE DECISÃO EXECUTÁVEL
+            # ─────────────────────────────────────────
+
+            if indice is not None:
+                modelo_ref = st.session_state.modelos_listados[indice]
+                produto = obter_produto(http_client, modelo_ref["url"])
+
+                preco_num = obter_preco(http_client, modelo_ref["url"])
+                if preco_num:
+                    produto["preco"] = formatar_preco_range(preco_num, idioma_detectado)
+
+                st.session_state.ultima_conversa = produto
+                resposta_gerada = perguntar_ia(pesquisa, produto, st.session_state.nome_usuario, idioma_detectado)
+
+            elif interesse_confirmado:
+                url_col = st.session_state.ultima_conversa.get("url_original")
+                prod_internos = obter_produtos_da_colecao(http_client, url_col)
+                if prod_internos:
+                    resposta_gerada = perguntar_ia_lista_colecao(pesquisa, st.session_state.nome_usuario, st.session_state.ultima_conversa["titulo"], prod_internos, idioma_detectado)
+                    st.session_state.ultima_conversa = {"titulo": st.session_state.ultima_conversa["titulo"], "tipo_schema": "lista_colecao", "produtos": prod_internos}
+                    st.session_state.modelos_listados = prod_internos
+                else:
+                    resposta_gerada = f"Não encontrei modelos ativos nesta categoria no momento. Contato Comercial: {CONTATO_COMPLETO}"
+
+            elif refinando_lista:
+                lista_at = st.session_state.ultima_conversa.get("produtos", st.session_state.modelos_listados)
+                prod_ref = {"titulo": st.session_state.ultima_conversa["titulo"], "ficha_tecnica": {"Aviso": "O usuário está refinando a busca dentro desta sublista de modelos ativos."}, "tipo_schema": "lista_colecao", "produtos": lista_at}
+                resposta_gerada = perguntar_ia(pesquisa, prod_ref, st.session_state.nome_usuario, idioma_detectado)
+
             else:
-                resposta_gerada = f"Não encontrei modelos ativos nesta categoria no momento. Contato Comercial: {CONTATO_COMPLETO}"
-
-        elif refinando_lista:
-            lista_at = st.session_state.ultima_conversa.get("produtos", st.session_state.modelos_listados)
-            prod_ref = {"titulo": st.session_state.ultima_conversa["titulo"], "ficha_tecnica": {"Aviso": "O usuário está refinando a busca dentro desta sublista de modelos ativos."}, "tipo_schema": "lista_colecao", "produtos": lista_at}
-            resposta_gerada = perguntar_ia(pesquisa, prod_ref, st.session_state.nome_usuario, idioma_detectado)
-
-        else:
-            # Integração e Mapeamento Robustecido com o classifier.py
-            tipo_bruto, produto_sugerido = classificar_intencao(
-                st.session_state.openai_client,
-                pesquisa,
-                st.session_state.get("historico_ia", [])
-            )
-
-            #st.write("DEBUG tipo_bruto =", tipo_bruto)
-            #st.write("DEBUG produto_sugerido =", produto_sugerido)            
-
-            MAPA_TIPO = {
-                "recomendacao_produtos": "CONSULTIVO",
-                "especifica_produto": "NOVO_PRODUTO",
-                "institucional": "CONTEXTO",
-                "consultivo": "CONSULTIVO",
-                "servico_curso": "CURSO",
-                "fora_de_escopo": "OUT_OF_SCOPE"
-            }
-
-            categorias_genericas = {
-                "sorvete",
-                "gelato",
-                "picolé",
-                "acai",
-                "açaí",
-                "chocolate",
-                "mixer"
-            }
-
-            #if produto_sugerido.lower() in categorias_genericas:
-            if any(termo in pesquisa_lower for termo in ["pasteuriz", "sorvete", "gelato", "picol", "acai", "chocolate"]):
-                categoria_detectada = detectar_categoria(pesquisa)              
-                #st.sidebar.write("\nDEBUG categoria_detectada =", categoria_detectada)
-                if categoria_detectada:
-                    url_col = f"https://finamac.com/pt/collections/{categoria_detectada}"
-                    prod_internos = obter_produtos_da_colecao(http_client, url_col)
-                    if prod_internos:
-                        resposta_gerada = perguntar_ia_lista_colecao(
-                            pesquisa, st.session_state.nome_usuario,
-                            categoria_detectada, prod_internos, idioma_detectado
-                        )
-                        st.session_state.ultima_conversa = {
-                            "titulo": categoria_detectada,
-                            "tipo_schema": "lista_colecao",
-                            "produtos": prod_internos
-                        }
-                        st.session_state.modelos_listados = prod_internos
-                    else:
-                        resposta_gerada = (
-                            f"Não encontrei modelos ativos nesta categoria no momento. "
-                            f"Contato Comercial: {CONTATO_COMPLETO}"
-                        )
-            else:
-                produto_extraido = (
-                    produto_sugerido
-                    if produto_sugerido != "NONE"
-                    else extrair_produto(pesquisa)
+                # Integração e Mapeamento Robustecido com o classifier.py
+                tipo_bruto, produto_sugerido = classificar_intencao(
+                    st.session_state.openai_client,
+                    pesquisa,
+                    st.session_state.get("historico_ia", [])
                 )
 
-            if not resposta_gerada:
-                tipo = MAPA_TIPO.get(tipo_bruto, "CONTEXTO")
+                #st.write("DEBUG tipo_bruto =", tipo_bruto)
+                #st.write("DEBUG produto_sugerido =", produto_sugerido)            
 
-                prod_ext = produto_sugerido
-                #st.sidebar.write("prod_ext:", prod_ext)
+                MAPA_TIPO = {
+                    "recomendacao_produtos": "CONSULTIVO",
+                    "especifica_produto": "NOVO_PRODUTO",
+                    "institucional": "CONTEXTO",
+                    "consultivo": "CONSULTIVO",
+                    "servico_curso": "CURSO",
+                    "fora_de_escopo": "OUT_OF_SCOPE"
+                }
 
-                if produto_sugerido != "NONE":
-                    prod_ext = produto_sugerido
+                categorias_genericas = {
+                    "sorvete",
+                    "gelato",
+                    "picolé",
+                    "acai",
+                    "açaí",
+                    "chocolate",
+                    "mixer"
+                }
 
-                    if tipo_bruto == "especifica_produto":
-                        tipo = "NOVO_PRODUTO"
-
-                if tipo == "OUT_OF_SCOPE":
-                    resposta_gerada = f"Desculpe, mas sou um assistente virtual exclusivo da Finamac e só posso responder a questões técnicas e comerciais sobre os nossos equipamentos de sorvete, picolé, açaí, chocolate e refrigeração comercial. Se precisar de um atendimento com nosso setor comercial, entre em contato com {CONTATO_COMPLETO} Como posso ajudar no desenvolvimento do seu negócio hoje?"
-
-                elif tipo == "CURSO":
-                    resposta_gerada = st.session_state.openai_client.chat.completions.create(
-                        model="gpt-4o-mini",
-                        messages=[
-                            {
-                                "role": "system",
-                                "content": (
-                                    "Você é um consultor comercial da Finamac. "
-                                    "Ajude o cliente a escolher o melhor curso disponível "
-                                    "no site oficial da Finamac para sua situação específica "
-                                    "que seja mais agradável para ele com base em interesses e "
-                                    "objetivos, tipos de produção no ramo de gelados, "
-                                    "público-alvo e tipo de produto produzido."
-                                    "De maneira alguma invente ou faça suposições sobre cursos "
-                                    "que não estão disponíveis e nem presentes no site. "
-                                    "Considere que, juntamente dos cursos em módulos, têm também "
-                                    "livro de receitas para diferentes preparações do ramo."
-                                    f"\nContato comercial autorizado: {CONTATO_COMPLETO}"
-                                )
-                            },
-                            {
-                                "role": "user",
-                                "content": pesquisa
-                            }
-                        ]
-                    ).choices[0].message.content  
-
-                elif tipo == "CONSULTIVO":
-                    resposta_gerada = st.session_state.openai_client.chat.completions.create(
-                        model="gpt-4o-mini",
-                        messages=[
-                            {
-                                "role": "system",
-                                "content": (
-                                    "Você é um consultor comercial da Finamac. "
-                                    "Ajude o cliente a escolher o equipamento ideal "
-                                    "com base em orçamento, espaço físico, capacidade "
-                                    "de produção, público-alvo e tipo de produto."
-                                    f"\nContato comercial autorizado: {CONTATO_COMPLETO}"
-                                )
-                            },
-                            {
-                                "role": "user",
-                                "content": pesquisa
-                            }
-                        ]
-                    ).choices[0].message.content      
-
-                elif tipo == "CONTEXTO" and st.session_state.ultima_conversa is not None:
-                    resposta_gerada = perguntar_ia(pesquisa, st.session_state.ultima_conversa, st.session_state.nome_usuario, idioma_detectado)
-                elif tipo == "CONTEXTO" and st.session_state.ultima_conversa is None:
-                    resposta_gerada = perguntar_ia_generico(pesquisa,st.session_state.nome_usuario, st.session_state.catalogo_oficial, idioma_detectado)
-
-                elif prod_ext == "NONE":
-                    cat = detectar_categoria(pesquisa)
-                    if cat:
-                        url_col = f"https://finamac.com/pt/collections/{cat}"
+                #if produto_sugerido.lower() in categorias_genericas:
+                if any(termo in pesquisa_lower for termo in ["pasteuriz", "sorvete", "gelato", "picol", "acai", "chocolate"]):
+                    categoria_detectada = detectar_categoria(pesquisa)              
+                    #st.sidebar.write("\nDEBUG categoria_detectada =", categoria_detectada)
+                    if categoria_detectada:
+                        url_col = f"https://finamac.com/pt/collections/{categoria_detectada}"
                         prod_internos = obter_produtos_da_colecao(http_client, url_col)
-                        #st.write("DEBUG quantidade produtos =", len(prod_internos))
-                        for p in prod_internos[:10]:
-                            st.write(" -", p["nome"])
                         if prod_internos:
-                            resposta_gerada = perguntar_ia_lista_colecao(pesquisa, st.session_state.nome_usuario, cat, prod_internos, idioma_detectado)
-                            st.session_state.ultima_conversa = {"titulo": cat, "tipo_schema": "lista_colecao", "produtos": prod_internos}
+                            resposta_gerada = perguntar_ia_lista_colecao(
+                                pesquisa, st.session_state.nome_usuario,
+                                categoria_detectada, prod_internos, idioma_detectado
+                            )
+                            st.session_state.ultima_conversa = {
+                                "titulo": categoria_detectada,
+                                "tipo_schema": "lista_colecao",
+                                "produtos": prod_internos
+                            }
                             st.session_state.modelos_listados = prod_internos
                         else:
-                            resposta_gerada = f"Nosso catálogo digital para esta categoria está passando por uma atualização rápida no momento. Por favor, consulte os dados técnicos diretamente pelo e-mail: {CONTATO_COMPLETO}"
+                            resposta_gerada = (
+                                f"Não encontrei modelos ativos nesta categoria no momento. "
+                                f"Contato Comercial: {CONTATO_COMPLETO}"
+                            )
+                else:
+                    produto_extraido = (
+                        produto_sugerido
+                        if produto_sugerido != "NONE"
+                        else extrair_produto(pesquisa)
+                    )
+
+                if not resposta_gerada:
+                    tipo = MAPA_TIPO.get(tipo_bruto, "CONTEXTO")
+
+                    prod_ext = produto_sugerido
+                    #st.sidebar.write("prod_ext:", prod_ext)
+
+                    if produto_sugerido != "NONE":
+                        prod_ext = produto_sugerido
+
+                        if tipo_bruto == "especifica_produto":
+                            tipo = "NOVO_PRODUTO"
+
+                    if tipo == "OUT_OF_SCOPE":
+                        resposta_gerada = f"Desculpe, mas sou um assistente virtual exclusivo da Finamac e só posso responder a questões técnicas e comerciais sobre os nossos equipamentos de sorvete, picolé, açaí, chocolate e refrigeração comercial. Se precisar de um atendimento com nosso setor comercial, entre em contato com {CONTATO_COMPLETO} Como posso ajudar no desenvolvimento do seu negócio hoje?"
+
+                    elif tipo == "CURSO":
+                        resposta_gerada = st.session_state.openai_client.chat.completions.create(
+                            model="gpt-4o-mini",
+                            messages=[
+                                {
+                                    "role": "system",
+                                    "content": (
+                                        "Você é um consultor comercial da Finamac. "
+                                        "Ajude o cliente a escolher o melhor curso disponível "
+                                        "no site oficial da Finamac para sua situação específica "
+                                        "que seja mais agradável para ele com base em interesses e "
+                                        "objetivos, tipos de produção no ramo de gelados, "
+                                        "público-alvo e tipo de produto produzido."
+                                        "De maneira alguma invente ou faça suposições sobre cursos "
+                                        "que não estão disponíveis e nem presentes no site. "
+                                        "Considere que, juntamente dos cursos em módulos, têm também "
+                                        "livro de receitas para diferentes preparações do ramo."
+                                        f"\nContato comercial autorizado: {CONTATO_COMPLETO}"
+                                    )
+                                },
+                                {
+                                    "role": "user",
+                                    "content": pesquisa
+                                }
+                            ]
+                        ).choices[0].message.content  
+
+                    elif tipo == "CONSULTIVO":
+                        resposta_gerada = st.session_state.openai_client.chat.completions.create(
+                            model="gpt-4o-mini",
+                            messages=[
+                                {
+                                    "role": "system",
+                                    "content": (
+                                        "Você é um consultor comercial da Finamac. "
+                                        "Ajude o cliente a escolher o equipamento ideal "
+                                        "com base em orçamento, espaço físico, capacidade "
+                                        "de produção, público-alvo e tipo de produto."
+                                        f"\nContato comercial autorizado: {CONTATO_COMPLETO}"
+                                    )
+                                },
+                                {
+                                    "role": "user",
+                                    "content": pesquisa
+                                }
+                            ]
+                        ).choices[0].message.content      
+
+                    elif tipo == "CONTEXTO" and st.session_state.ultima_conversa is not None:
+                        resposta_gerada = perguntar_ia(pesquisa, st.session_state.ultima_conversa, st.session_state.nome_usuario, idioma_detectado)
+                    elif tipo == "CONTEXTO" and st.session_state.ultima_conversa is None:
+                        resposta_gerada = perguntar_ia_generico(pesquisa,st.session_state.nome_usuario, st.session_state.catalogo_oficial, idioma_detectado)
+
+                    elif prod_ext == "NONE":
+                        cat = detectar_categoria(pesquisa)
+                        if cat:
+                            url_col = f"https://finamac.com/pt/collections/{cat}"
+                            prod_internos = obter_produtos_da_colecao(http_client, url_col)
+                            #st.write("DEBUG quantidade produtos =", len(prod_internos))
+                            for p in prod_internos[:10]:
+                                st.write(" -", p["nome"])
+                            if prod_internos:
+                                resposta_gerada = perguntar_ia_lista_colecao(pesquisa, st.session_state.nome_usuario, cat, prod_internos, idioma_detectado)
+                                st.session_state.ultima_conversa = {"titulo": cat, "tipo_schema": "lista_colecao", "produtos": prod_internos}
+                                st.session_state.modelos_listados = prod_internos
+                            else:
+                                resposta_gerada = f"Nosso catálogo digital para esta categoria está passando por uma atualização rápida no momento. Por favor, consulte os dados técnicos diretamente pelo e-mail: {CONTATO_COMPLETO}"
+                                st.session_state.modelos_listados = [] 
+                        else:
+                            resposta_gerada = perguntar_ia_generico(pesquisa,st.session_state.nome_usuario, st.session_state.catalogo_oficial, idioma_detectado)
                             st.session_state.modelos_listados = [] 
                     else:
-                        resposta_gerada = perguntar_ia_generico(pesquisa,st.session_state.nome_usuario, st.session_state.catalogo_oficial, idioma_detectado)
-                        st.session_state.modelos_listados = [] 
-                else:
-                    res_busca = buscar_produto(http_client, prod_ext)
-                    #st.write(res_busca)
-                    #st.write("DEBUG produto extraido =", produto_extraido)
-                    p_urls, c_urls = res_busca.get("produtos", []), res_busca.get("colecoes", [])
+                        res_busca = buscar_produto(http_client, prod_ext)
+                        #st.write(res_busca)
+                        #st.write("DEBUG produto extraido =", produto_extraido)
+                        p_urls, c_urls = res_busca.get("produtos", []), res_busca.get("colecoes", [])
 
-                    if not p_urls and not c_urls:
-                        resposta_gerada = f"Não encontrei nenhum equipamento correspondente a '{prod_ext}' no catálogo digital do site oficial. Contato Comercial: {CONTATO_COMPLETO}"
-                        st.session_state.modelos_listados = []
-                    else:
-                        st.session_state.modelos_listados = [] 
-                        if p_urls:
-                            url_esc = escolher_melhor_produto(p_urls, prod_ext)
-                            produto = obter_produto(http_client, url_esc)
-                            #st.write("URL ESCOLHIDA:", url_esc)
-                            #st.write(
-                            #    "TITULO:",
-                            #    produto.get("titulo")
-                            #)
-                            #st.write(
-                            #    "QTD CAMPOS FICHA:",
-                            #    len(produto.get("ficha_tecnica", {}))
-                            #)
-                            #st.write(
-                            #    produto.get("ficha_tecnica", {})
-                            #)
-
-                            print(produto)
-
-                            preco_num = obter_preco(http_client, url_esc)
-                            if preco_num:
-                                produto["preco"] = formatar_preco_range(preco_num, idioma_detectado)
-
-                            st.session_state.ultima_conversa = produto
+                        if not p_urls and not c_urls:
+                            resposta_gerada = f"Não encontrei nenhum equipamento correspondente a '{prod_ext}' no catálogo digital do site oficial. Contato Comercial: {CONTATO_COMPLETO}"
+                            st.session_state.modelos_listados = []
                         else:
-                            url_col = escolher_melhor_produto(c_urls, prod_ext)
-                            produto = {"titulo": prod_ext, "ficha_tecnica": {}, "url_original": url_col, "tipo_schema": "colecao"}
-                            st.session_state.ultima_conversa = produto
+                            st.session_state.modelos_listados = [] 
+                            if p_urls:
+                                url_esc = escolher_melhor_produto(p_urls, prod_ext)
+                                produto = obter_produto(http_client, url_esc)
+                                #st.write("URL ESCOLHIDA:", url_esc)
+                                #st.write(
+                                #    "TITULO:",
+                                #    produto.get("titulo")
+                                #)
+                                #st.write(
+                                #    "QTD CAMPOS FICHA:",
+                                #    len(produto.get("ficha_tecnica", {}))
+                                #)
+                                #st.write(
+                                #    produto.get("ficha_tecnica", {})
+                                #)
 
-                        resposta_gerada = perguntar_ia(pesquisa, produto, st.session_state.nome_usuario, idioma_detectado)
-                    
-    st.session_state.messages.append({"role": "assistant", "content": resposta_gerada})
-    st.session_state.historico_ia.append({"role": "user", "content": pesquisa})
-    st.session_state.historico_ia.append({"role": "assistant", "content": resposta_gerada})
+                                print(produto)
 
-    # Força atualização visual sem perder estado
-    placeholder = st.empty()
-    with placeholder.container():
-        st.chat_message("assistant").markdown(resposta_gerada)
+                                preco_num = obter_preco(http_client, url_esc)
+                                if preco_num:
+                                    produto["preco"] = formatar_preco_range(preco_num, idioma_detectado)
+
+                                st.session_state.ultima_conversa = produto
+                            else:
+                                url_col = escolher_melhor_produto(c_urls, prod_ext)
+                                produto = {"titulo": prod_ext, "ficha_tecnica": {}, "url_original": url_col, "tipo_schema": "colecao"}
+                                st.session_state.ultima_conversa = produto
+
+                            resposta_gerada = perguntar_ia(pesquisa, produto, st.session_state.nome_usuario, idioma_detectado)
+
+        st.session_state.messages.append({"role": "assistant", "content": resposta_gerada})
+        st.session_state.historico_ia.append({"role": "user", "content": pesquisa})
+        st.session_state.historico_ia.append({"role": "assistant", "content": resposta_gerada})
+
+        # Força atualização visual sem perder estado
+        placeholder = st.empty()
+        with placeholder.container():
+            st.chat_message("assistant").markdown(resposta_gerada)
