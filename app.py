@@ -21,6 +21,9 @@ if "openai_client" not in st.session_state:
     st.session_state.openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 CONTATO_COMERCIAL = "vendas@finamac.com.br ou pelo telefone +55 11 98846-5990. Se preferir, faça uma visita ao nosso Showroom em São Paulo para conhecer nossos produtos pessoalmente!"
+system_prompt = {
+    f"Sempre que mencionar {CONTATO_COMERCIAL}, mande ao usuário o endereço do showroom em São Paulo, mas como um link de GPS. Endereço: [Avenida Nazaré 1657, São Paulo, São Paulo, 04263-200]; Link:(https://maps.google.com/?q=Avenida+Nazaré+1657,+São+Paulo,+São+Paulo,+04263-200)"
+}
 
 CATEGORIAS_SLUGS_VALIDAS = {
     "ice-pops": ["picole", "picoleteira", "pop", "paleta", "ice pop", "artisanal", "artesanal", "producer", "produtora", "automatic", "automática", "industrial", "production", "produção"],
@@ -235,7 +238,6 @@ def perguntar_ia(pergunta, produto, nome, idioma):
             f"Especificações Técnicas (JSON): {ficha_json}\n"
             f"Link Original: {produto.get('url_original', 'https://finamac.com/pt')}\n"
             f"Contato autorizado: {CONTATO_COMERCIAL}\n\n"
-            f"Sempre que mencionar {CONTATO_COMERCIAL}, mande ao usuário o endereço do showroom em São Paulo, mas como um link de GPS. Endereço: [Avenida Nazaré 1657, São Paulo, São Paulo, 04263-200](https://maps.google.com/?q=Avenida+Nazaré+1657,+São+Paulo,+São+Paulo,+04263-200)"
         )    
     else:
         system_prompt = (
