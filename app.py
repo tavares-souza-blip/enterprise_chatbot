@@ -397,6 +397,14 @@ def gerar_saudacao_personalizada(nome, perfil, interesse):
                 f"Você já tem experiência com o produto ou está começando do zero?"
             )
 
+        elif interesse == "Cursos e treinamentos":
+            return (
+                f"Prazer em te conhecer, {nome}! "
+                f"Vi que você tem interesse em cursos e treinamentos. "
+                f"Está buscando capacitação para iniciar seu negócio ou aprimorar suas habilidades existentes?"
+            )
+        
+
     elif perfil == "Já produzo sorvetes":
 
         return (
