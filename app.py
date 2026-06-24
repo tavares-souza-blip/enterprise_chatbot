@@ -264,7 +264,7 @@ açaí -> acai-frozen-bowl-equipment
 
 # --- FUNÇÕES DE RESPOSTA DA IA ---
 
-def perguntar_ia(pergunta, produto, nome, idioma):
+def perguntar_ia(pergunta, produto, nome, idioma, contato):
     ficha_json = produto.get("ficha_tecnica", {})
     tem_ficha = len(ficha_json) > 0
     preco_info = produto.get("preco", "Sob Consulta / Não listado publicamente")
@@ -278,17 +278,15 @@ def perguntar_ia(pergunta, produto, nome, idioma):
             f"2. Não invente nem estime valores ausentes — redirecione ao comercial.\n"
             f"3. Apresente os dados com bullet points e Markdown profissional, para facilitar a leitura do cliente, incluindo os links diretos enviados no JSON.\n"
             f"4. Ao mencionar o equipamento, inclua o link real do produto em formato Markdown, \n"
-            f"5. Você é um consultor de vendas da Finamac. Nunca use respostas genéricas ou teóricas se houver produtos específicos na lista de {produto} ou {obter_produtos_da_colecao} fornecida no contexto. \n"
-            "6. Se o contexto trouxer modelos específicos (ex: linha PP-60, PP-110, PP-200), você deve citar esses nomes comerciais exatos na resposta e explicar para que servem. \n"
-            "7. Quando o produto selecionado for um combo, kit ou versão (como 'Versão Intermediária PLUS'), você não pode tratá-lo como um produto simples. É obrigatório abrir a descrição e listar para o cliente o que está incluso (ex: quantidade de formas, extratores, alinhadores e capacidade de produção)."
-            f"Antes de declarar que um produto não existe no catálogo, você DEVE varrer todo o objeto JSON fornecido. Se o termo buscado pelo usuário (ex: pasteurizador) estiver listado nos títulos ou URLs do array {produto} ou {obter_produtos_da_colecao}, você deve citar esses modelos pelo nome, mesmo que a url escolhida pelo sistema traga uma ficha técnica de outro produto."
+            "5. Se o contexto trouxer modelos específicos (ex: linha PP-60, PP-110, PP-200), você deve citar esses nomes comerciais exatos na resposta e explicar para que servem. \n"
+            "6. Quando o produto selecionado for um combo, kit ou versão (como 'Versão Intermediária PLUS'), você não pode tratá-lo como um produto simples. É obrigatório abrir a descrição e listar para o cliente o que está incluso (ex: quantidade de formas, extratores, alinhadores e capacidade de produção)."
             f"ex: [{produto.get('titulo', 'Ver produto')}]({produto.get('url_original', '')}).\n\n"
             f"DADOS REAIS DO PRODUTO:\n"
             f"Equipamento: {produto.get('titulo', 'Não informado')}\n"
             f"Preço de Referência: {preco_info}\n"
             f"Especificações Técnicas (JSON): {ficha_json}\n"
             f"Link Original: {produto.get('url_original', 'https://finamac.com/pt')}\n"
-            f"Contato autorizado: {CONTATO_COMPLETO}\n\n"
+            f"Contato autorizado: {contato}\n\n"
         )    
     else:
         system_prompt = (
@@ -296,7 +294,7 @@ def perguntar_ia(pergunta, produto, nome, idioma):
             f"Idioma: {idioma}.\n\n"
             f"REGRA ABSOLUTA: As especificações detalhadas deste equipamento não estão disponíveis "
             f"no momento via scraping. NÃO invente dados técnicos. Se perguntado sobre potência, "
-            f"peso ou capacidade, informe que não foi possível localizar e redirecione para: {CONTATO_COMPLETO}\n\n"
+            f"peso ou capacidade, informe que não foi possível localizar e redirecione para: {contato}\n\n"
             f"Equipamento consultado: {produto.get('titulo', 'Não informado')}\n"
             f"URL: {produto.get('url_original', 'https://finamac.com/pt')}"
         )
@@ -312,12 +310,13 @@ def perguntar_ia(pergunta, produto, nome, idioma):
 
     return resposta.choices[0].message.content
 
-def perguntar_ia_generico(pergunta, nome, catalogo_maquinas, idioma):
+def perguntar_ia_generico(pergunta, nome, catalogo_maquinas, idioma, contato):
     lista = "\n".join([f"- {item['nome']}" for item in catalogo_maquinas])
     system_prompt = (
         f"Você é um consultor comercial da Finamac atendendo: {nome}.\nIdioma: {idioma}.\n\n"
         f"EQUIPAMENTOS REAIS DISPONÍVEIS NO SITE:\n{lista}\n\n"
         f"Oriente o usuário de forma educada e prestativa a buscar por um desses segmentos ou modelos específicos da nossa linha de fabricação."
+        f"Contato autorizado: {contato}."
     )
     
     if "messages" not in st.session_state:
@@ -330,14 +329,14 @@ def perguntar_ia_generico(pergunta, nome, catalogo_maquinas, idioma):
 
     return resposta.choices[0].message.content
 
-def perguntar_ia_lista_colecao(pergunta, nome, titulo_colecao, produtos_lista, idioma):
+def perguntar_ia_lista_colecao(pergunta, nome, titulo_colecao, produtos_lista, idioma, contato):
     lista = "\n".join([f"{i+1}. {p['nome']}" for i, p in enumerate(produtos_lista)])
     system_prompt = (
         f"Você é um consultor especializado da Finamac atendendo: {nome}.\nCategoria Atual: {titulo_colecao}.\nIdioma: {idioma}.\n\n"
         f"MODELOS DISPONÍVEIS NESTA CATEGORIA:\n{lista}\n\n"
         f"Apresente a lista para o usuário de forma organizada em Markdown. Diga clara e explicitamente que ele pode escolher um modelo digitando o nome completo do equipamento ou indicando pela posição numérica na lista (ex: 'o primeiro', 'opção 3')."
+        f"Contato autorizado: {contato}"
         "Esses modelos são REAIS — cite-os diretamente, incluindo o link de cada um quando disponível. "
-        f"O link deve ser igual ao produto buscado em {produtos_lista}"    
     )
 
     if "messages" not in st.session_state:
@@ -475,6 +474,7 @@ if not st.session_state.nome_usuario:
         if perfil == "Selecione uma opção":  
             perfil = None
 
+        perfil_prompt = ""
         if perfil == "Quero abrir meu negócio":
             perfil_prompt = """
         O usuário é iniciante no setor.
@@ -570,16 +570,29 @@ if not st.session_state.nome_usuario:
             st.stop()
 
         else:
-            with st.form("formulario"):
-                st.write("Obrigado por fornecer suas informações! Agora você pode iniciar a conversa com o consultor virtual.")
-                st.form_submit_button("Iniciar Conversa")
-                st.session_state.nome_usuario = nome.strip()
-                saudacao = gerar_saudacao_personalizada(st.session_state.nome_usuario, perfil, interesse)
-                st.session_state.messages.append({"role": "assistant", "content": saudacao})
-                #st.write("Digite sua pergunta sobre as máquinas Finamac no campo abaixo e pressione Enter.")
-                #st.text_input("Digite sua pergunta:", key="pergunta_usuario")
-                st.session_state.inicializado = True
-                st.session_state.historico_ia.append({"role": "system", "content": f"Usuário: {nome.strip()}, Email: {email.strip()}, WhatsApp: {whatsapp.strip()}, Perfil: {perfil.strip()}, Interesse: {interesse.strip()}"})
+            st.session_state.nome_usuario = nome.strip()
+
+            idioma_inicial = detectar_idioma(nome)
+            st.session_state.pais_usuario = detectar_pais_usuario(nome, idioma_inicial)
+            st.session_state.link_endereco = montar_link_endereco(st.session_state.pais_usuario)
+
+            saudacao = gerar_saudacao_personalizada(st.session_state.nome_usuario, perfil, interesse)
+            st.session_state.messages.append({"role": "assistant", "content": saudacao})
+            st.session_state.historico_ia.append({
+                "role": "system",
+                "content": f"Usuário: {nome.strip()}, Email: {email.strip()}, WhatsApp: {whatsapp.strip()}, Perfil: {perfil}, Interesse: {interesse}"
+            })
+            st.rerun()  
+            #with st.form("formulario"):
+            #    st.write("Obrigado por fornecer suas informações! Agora você pode iniciar a conversa com o consultor virtual.")
+            #    st.form_submit_button("Iniciar Conversa")
+            #    st.session_state.nome_usuario = nome.strip()             
+            #    saudacao = gerar_saudacao_personalizada(st.session_state.nome_usuario, perfil, interesse)
+            #    st.session_state.messages.append({"role": "assistant", "content": saudacao})
+            #    st.session_state.inicializado = True
+            #    st.session_state.historico_ia.append({"role": "system", "content": f"Usuário: {nome.strip()}, Email: {email.strip()}, WhatsApp: {whatsapp.strip()}, Perfil: {perfil.strip()}, Interesse: {interesse.strip()}"})
+            #    st.session_state.historico_ia.append({"role": "system", "content": perfil_prompt + "\n\n" + interesse_prompt})
+
                 #st.form_submit_button("Obrigado! Agora você pode iniciar a conversa com o consultor virtual.") 
 
 else:
@@ -642,13 +655,13 @@ else:
                     produto["preco"] = formatar_preco_range(preco_num, idioma_detectado)
 
                 st.session_state.ultima_conversa = produto
-                resposta_gerada = perguntar_ia(pesquisa, produto, st.session_state.nome_usuario, idioma_detectado)
+                resposta_gerada = perguntar_ia(pesquisa, produto, st.session_state.nome_usuario, idioma_detectado, CONTATO_COMPLETO)
 
             elif interesse_confirmado:
                 url_col = st.session_state.ultima_conversa.get("url_original")
                 prod_internos = obter_produtos_da_colecao(http_client, url_col)
                 if prod_internos:
-                    resposta_gerada = perguntar_ia_lista_colecao(pesquisa, st.session_state.nome_usuario, st.session_state.ultima_conversa["titulo"], prod_internos, idioma_detectado)
+                    resposta_gerada = perguntar_ia_lista_colecao(pesquisa, st.session_state.nome_usuario, st.session_state.ultima_conversa["titulo"], prod_internos, idioma_detectado, CONTATO_COMPLETO)
                     st.session_state.ultima_conversa = {"titulo": st.session_state.ultima_conversa["titulo"], "tipo_schema": "lista_colecao", "produtos": prod_internos}
                     st.session_state.modelos_listados = prod_internos
                 else:
@@ -657,7 +670,7 @@ else:
             elif refinando_lista:
                 lista_at = st.session_state.ultima_conversa.get("produtos", st.session_state.modelos_listados)
                 prod_ref = {"titulo": st.session_state.ultima_conversa["titulo"], "ficha_tecnica": {"Aviso": "O usuário está refinando a busca dentro desta sublista de modelos ativos."}, "tipo_schema": "lista_colecao", "produtos": lista_at}
-                resposta_gerada = perguntar_ia(pesquisa, prod_ref, st.session_state.nome_usuario, idioma_detectado)
+                resposta_gerada = perguntar_ia(pesquisa, prod_ref, st.session_state.nome_usuario, idioma_detectado, CONTATO_COMPLETO)
 
             else:
                 # Integração e Mapeamento Robustecido com o classifier.py
@@ -699,7 +712,8 @@ else:
                         if prod_internos:
                             resposta_gerada = perguntar_ia_lista_colecao(
                                 pesquisa, st.session_state.nome_usuario,
-                                categoria_detectada, prod_internos, idioma_detectado
+                                categoria_detectada, prod_internos, idioma_detectado,
+                                CONTATO_COMPLETO
                             )
                             st.session_state.ultima_conversa = {
                                 "titulo": categoria_detectada,
@@ -783,9 +797,9 @@ else:
                         ).choices[0].message.content      
 
                     elif tipo == "CONTEXTO" and st.session_state.ultima_conversa is not None:
-                        resposta_gerada = perguntar_ia(pesquisa, st.session_state.ultima_conversa, st.session_state.nome_usuario, idioma_detectado)
+                        resposta_gerada = perguntar_ia(pesquisa, st.session_state.ultima_conversa, st.session_state.nome_usuario, idioma_detectado, CONTATO_COMPLETO)
                     elif tipo == "CONTEXTO" and st.session_state.ultima_conversa is None:
-                        resposta_gerada = perguntar_ia_generico(pesquisa,st.session_state.nome_usuario, st.session_state.catalogo_oficial, idioma_detectado)
+                        resposta_gerada = perguntar_ia_generico(pesquisa,st.session_state.nome_usuario, st.session_state.catalogo_oficial, idioma_detectado, CONTATO_COMPLETO)
 
                     elif prod_ext == "NONE":
                         cat = detectar_categoria(pesquisa)
@@ -796,14 +810,14 @@ else:
                             for p in prod_internos[:10]:
                                 st.write(" -", p["nome"])
                             if prod_internos:
-                                resposta_gerada = perguntar_ia_lista_colecao(pesquisa, st.session_state.nome_usuario, cat, prod_internos, idioma_detectado)
+                                resposta_gerada = perguntar_ia_lista_colecao(pesquisa, st.session_state.nome_usuario, cat, prod_internos, idioma_detectado, CONTATO_COMPLETO)
                                 st.session_state.ultima_conversa = {"titulo": cat, "tipo_schema": "lista_colecao", "produtos": prod_internos}
                                 st.session_state.modelos_listados = prod_internos
                             else:
                                 resposta_gerada = f"Nosso catálogo digital para esta categoria está passando por uma atualização rápida no momento. Por favor, consulte os dados técnicos diretamente pelo e-mail: {CONTATO_COMPLETO}"
                                 st.session_state.modelos_listados = [] 
                         else:
-                            resposta_gerada = perguntar_ia_generico(pesquisa,st.session_state.nome_usuario, st.session_state.catalogo_oficial, idioma_detectado)
+                            resposta_gerada = perguntar_ia_generico(pesquisa,st.session_state.nome_usuario, st.session_state.catalogo_oficial, idioma_detectado, CONTATO_COMPLETO)
                             st.session_state.modelos_listados = [] 
                     else:
                         res_busca = buscar_produto(http_client, prod_ext)
@@ -844,7 +858,7 @@ else:
                                 produto = {"titulo": prod_ext, "ficha_tecnica": {}, "url_original": url_col, "tipo_schema": "colecao"}
                                 st.session_state.ultima_conversa = produto
 
-                            resposta_gerada = perguntar_ia(pesquisa, produto, st.session_state.nome_usuario, idioma_detectado)
+                            resposta_gerada = perguntar_ia(pesquisa, produto, st.session_state.nome_usuario, idioma_detectado, CONTATO_COMPLETO)
 
         st.session_state.messages.append({"role": "assistant", "content": resposta_gerada})
         st.session_state.historico_ia.append({"role": "user", "content": pesquisa})
