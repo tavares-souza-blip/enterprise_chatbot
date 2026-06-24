@@ -372,6 +372,60 @@ def detectar_idioma(pergunta: str) -> str:
 
     return resultado
 
+def gerar_saudacao_personalizada(nome, perfil, interesse):
+
+    if perfil == "Quero abrir meu negócio":
+
+        if interesse == "Máquinas para sorvetes":
+            return (
+                f"Prazer em te conhecer, {nome}! "
+                f"Vi que você pretende iniciar um negócio no setor de sorvetes. "
+                f"Você já tem uma estimativa de produção ou ainda está avaliando as opções disponíveis?"
+            )
+
+        elif interesse == "Máquinas para picolés":
+            return (
+                f"Prazer em te conhecer, {nome}! "
+                f"Vi que você deseja iniciar um negócio de picolés. "
+                f"Você está pensando em uma produção artesanal ou já busca uma operação com maior escala?"
+            )
+
+        elif interesse == "Máquinas para açaí":
+            return (
+                f"Prazer em te conhecer, {nome}! "
+                f"Vi que você quer abrir um negócio de açaí. "
+                f"Você já tem experiência com o produto ou está começando do zero?"
+            )
+
+    elif perfil == "Já produzo sorvetes":
+
+        return (
+            f"Prazer em te conhecer, {nome}! "
+            f"Como você já atua com sorvetes, posso ajudá-lo a encontrar equipamentos para ampliar produtividade, qualidade ou capacidade de produção. "
+            f"Qual é seu principal objetivo hoje?"
+        )
+
+    elif perfil == "Já produzo picolés":
+
+        return (
+            f"Prazer em te conhecer, {nome}! "
+            f"Como você já produz picolés, posso ajudá-lo com expansão de produção, automação ou novos equipamentos. "
+            f"Qual desafio você busca resolver?"
+        )
+
+    elif perfil == "Tenho fábrica de gelados":
+
+        return (
+            f"Prazer em te conhecer, {nome}! "
+            f"Entendi que você já possui uma operação estruturada no setor de gelados. "
+            f"Está buscando aumentar capacidade produtiva, modernizar equipamentos ou implantar novos processos?"
+        )
+
+    return (
+        f"Prazer em te conhecer, {nome}! "
+        f"Sou o consultor virtual da Finamac. Como posso ajudar no seu negócio de gelados hoje?"
+    )
+
 # ─────────────────────────────────────────
 # INTERFACE E FLUXO DO STREAMLIT
 # ─────────────────────────────────────────
@@ -397,13 +451,113 @@ if "nome_usuario" not in st.session_state: st.session_state.nome_usuario = None
 if not st.session_state.nome_usuario:
     with st.form("formulario_vazio"):
         nome = st.text_input("Nome: *")
+
         email = st.text_input("Email: *")
+
         whatsapp = st.text_input("WhatsApp: *")
-        atuacao = st.text_input("Atua na área de gelados? *")
+
+        perfil = st.selectbox("Qual sua situação atual? *", 
+                               ["Selecione uma opção", 
+                                "Quero abrir meu negócio", 
+                                "Já produzo sorvetes",
+                                "Já produzo picolés",
+                                "Já trabalho com açaí",
+                                "Tenho fábrica de gelados",
+                                "Outro"])
+        if perfil == "Selecione uma opção":  
+            perfil = None
+
+        if perfil == "Quero abrir meu negócio":
+            perfil_prompt = """
+        O usuário é iniciante no setor.
+
+        Explique conceitos de forma simples.
+        Evite excesso de termos técnicos.
+        Priorize máquinas de entrada.
+        Priorize orientação consultiva.
+        Sempre responda às perguntas do usuário com base no conteúdo do site da Finamac (https://finamac.com/).
+        """
+        elif perfil in ["Já produzo sorvetes", "Já produzo picolés", "Já trabalho com açaí"]:
+            perfil_prompt = """
+        O usuário possui experiência prática.
+
+        Use linguagem técnica moderada.
+        Pode discutir produtividade, capacidade de produção e escalabilidade.
+        Recomende máquinas adequadas ao nível de experiência do usuário.
+        Sempre responda às perguntas do usuário com base no conteúdo do site da Finamac (https://finamac.com/).
+        """
+        elif perfil == "Tenho fábrica de gelados":
+            perfil_prompt = """
+        O usuário possui experiência industrial.
+
+        Utilize linguagem técnica.
+        Pode discutir produtividade, pasteurização, homogeneização,
+        capacidade de produção e escalabilidade.
+        Sempre responda às perguntas do usuário com base no conteúdo do site da Finamac (https://finamac.com/).
+        """
+        interesse = st.selectbox("O que você procura hoje? *",
+                                ["Selecione uma opção",
+                                "Máquinas para sorvetes",
+                                "Máquinas para picolés",
+                                "Máquinas para açaí",
+                                "Cursos e treinamentos",
+                                "Peças e manutenção"])
+        if interesse == "Selecione uma opção":  
+            interesse = None
+
+        if interesse == "Máquinas para sorvetes":
+            interesse_prompt = f"""
+        O usuário demonstra interesse em 
+        máquinas para produção de sorvetes.
+
+        Pergunte para qual tipo de sorvete ele deseja produzir 
+        (ex: artesanal, industrial, gelato, soft-serve) e 
+        recomende máquinas adequadas a esse perfil, presentes
+        nas {CATEGORIAS_SLUGS_VALIDAS} 
+        """
+            
+        elif interesse == "Máquinas para picolés":
+            interesse_prompt = f"""
+        O usuário demonstra interesse em 
+        máquinas para produção de picolés.
+
+        Recomende máquinas adequadas a esse perfil, presentes
+        nas {CATEGORIAS_SLUGS_VALIDAS} 
+        """
+            
+        elif interesse == "Máquinas para açaí":
+            interesse_prompt = f"""
+        O usuário demonstra interesse em 
+        máquinas para produção de açaí.
+
+        Recomende máquinas adequadas a esse perfil, presentes
+        nas {CATEGORIAS_SLUGS_VALIDAS} 
+        """
+                        
+        elif interesse == "Cursos e treinamentos":
+            interesse_prompt = f"""
+        O usuário demonstra interesse em 
+        cursos e treinamentos.
+
+        Recomende os cursos adequados a esse perfil, presentes
+        nas {CATEGORIAS_SLUGS_VALIDAS}
+        """
+            
+        elif interesse == "Peças e manutenção":
+            interesse_prompt = f"""
+        O usuário demonstra interesse em 
+        peças e manutenção.
+
+        Recomende peças e serviços de manutenção adequados a esse perfil, presentes
+        nas {CATEGORIAS_SLUGS_VALIDAS}
+        """
+
+        st.session_state.perfil_cliente = perfil
+        st.session_state.interesse_cliente = interesse
         submitted = st.form_submit_button("Salvar")
-    
+
     if submitted: 
-        if not nome or not email or not whatsapp or not atuacao:
+        if not nome or not email or not whatsapp or not perfil or not interesse:
             st.error("Os campos são obrigatórios para iniciar o atendimento. Por favor, preencha todos os campos.")
             st.stop()
 
@@ -412,13 +566,12 @@ if not st.session_state.nome_usuario:
                 st.write("Obrigado por fornecer suas informações! Agora você pode iniciar a conversa com o consultor virtual.")
                 st.form_submit_button("Iniciar Conversa")
                 st.session_state.nome_usuario = nome.strip()
-                saudacao = f"Prazer em te conhecer, {st.session_state.nome_usuario}! Sou o consultor virtual da Finamac. Como posso ajudar no seu negócio de gelados hoje?" 
+                saudacao = gerar_saudacao_personalizada(st.session_state.nome_usuario, perfil, interesse)
                 st.session_state.messages.append({"role": "assistant", "content": saudacao})
-
                 #st.write("Digite sua pergunta sobre as máquinas Finamac no campo abaixo e pressione Enter.")
                 #st.text_input("Digite sua pergunta:", key="pergunta_usuario")
                 st.session_state.inicializado = True
-                st.session_state.historico_ia.append({"role": "system", "content": f"Usuário: {nome.strip()}, Email: {email.strip()}, WhatsApp: {whatsapp.strip()}, Atua na área de gelados: {atuacao.strip()}"})
+                st.session_state.historico_ia.append({"role": "system", "content": f"Usuário: {nome.strip()}, Email: {email.strip()}, WhatsApp: {whatsapp.strip()}, Perfil: {perfil.strip()}, Interesse: {interesse.strip()}"})
                 #st.form_submit_button("Obrigado! Agora você pode iniciar a conversa com o consultor virtual.") 
 
 else:
