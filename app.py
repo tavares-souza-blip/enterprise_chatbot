@@ -278,8 +278,10 @@ def perguntar_ia(pergunta, produto, nome, idioma, contato):
             f"2. Não invente nem estime valores ausentes — redirecione ao comercial.\n"
             f"3. Apresente os dados com bullet points e Markdown profissional, para facilitar a leitura do cliente, incluindo os links diretos enviados no JSON.\n"
             f"4. Ao mencionar o equipamento, inclua o link real do produto em formato Markdown, \n"
-            "5. Se o contexto trouxer modelos específicos (ex: linha PP-60, PP-110, PP-200), você deve citar esses nomes comerciais exatos na resposta e explicar para que servem. \n"
-            "6. Quando o produto selecionado for um combo, kit ou versão (como 'Versão Intermediária PLUS'), você não pode tratá-lo como um produto simples. É obrigatório abrir a descrição e listar para o cliente o que está incluso (ex: quantidade de formas, extratores, alinhadores e capacidade de produção)."
+            f"5. Você é um consultor de vendas da Finamac. Nunca use respostas genéricas ou teóricas se houver produtos específicos na lista de {produto} ou {obter_produtos_da_colecao} fornecida no contexto. \n"
+            "6. Se o contexto trouxer modelos específicos (ex: linha PP-60, PP-110, PP-200), você deve citar esses nomes comerciais exatos na resposta e explicar para que servem. \n"
+            "7. Quando o produto selecionado for um combo, kit ou versão (como 'Versão Intermediária PLUS'), você não pode tratá-lo como um produto simples. É obrigatório abrir a descrição e listar para o cliente o que está incluso (ex: quantidade de formas, extratores, alinhadores e capacidade de produção)."
+            f"Antes de declarar que um produto não existe no catálogo, você DEVE varrer todo o objeto JSON fornecido. Se o termo buscado pelo usuário (ex: pasteurizador) estiver listado nos títulos ou URLs do array {produto} ou {obter_produtos_da_colecao}, você deve citar esses modelos pelo nome, mesmo que a url escolhida pelo sistema traga uma ficha técnica de outro produto."
             f"ex: [{produto.get('titulo', 'Ver produto')}]({produto.get('url_original', '')}).\n\n"
             f"DADOS REAIS DO PRODUTO:\n"
             f"Equipamento: {produto.get('titulo', 'Não informado')}\n"
@@ -474,7 +476,6 @@ if not st.session_state.nome_usuario:
         if perfil == "Selecione uma opção":  
             perfil = None
 
-        perfil_prompt = ""
         if perfil == "Quero abrir meu negócio":
             perfil_prompt = """
         O usuário é iniciante no setor.
@@ -570,29 +571,16 @@ if not st.session_state.nome_usuario:
             st.stop()
 
         else:
-            st.session_state.nome_usuario = nome.strip()
-
-            idioma_inicial = detectar_idioma(nome)
-            st.session_state.pais_usuario = detectar_pais_usuario(nome, idioma_inicial)
-            st.session_state.link_endereco = montar_link_endereco(st.session_state.pais_usuario)
-
-            saudacao = gerar_saudacao_personalizada(st.session_state.nome_usuario, perfil, interesse)
-            st.session_state.messages.append({"role": "assistant", "content": saudacao})
-            st.session_state.historico_ia.append({
-                "role": "system",
-                "content": f"Usuário: {nome.strip()}, Email: {email.strip()}, WhatsApp: {whatsapp.strip()}, Perfil: {perfil}, Interesse: {interesse}"
-            })
-            st.rerun()  
-            #with st.form("formulario"):
-            #    st.write("Obrigado por fornecer suas informações! Agora você pode iniciar a conversa com o consultor virtual.")
-            #    st.form_submit_button("Iniciar Conversa")
-            #    st.session_state.nome_usuario = nome.strip()             
-            #    saudacao = gerar_saudacao_personalizada(st.session_state.nome_usuario, perfil, interesse)
-            #    st.session_state.messages.append({"role": "assistant", "content": saudacao})
-            #    st.session_state.inicializado = True
-            #    st.session_state.historico_ia.append({"role": "system", "content": f"Usuário: {nome.strip()}, Email: {email.strip()}, WhatsApp: {whatsapp.strip()}, Perfil: {perfil.strip()}, Interesse: {interesse.strip()}"})
-            #    st.session_state.historico_ia.append({"role": "system", "content": perfil_prompt + "\n\n" + interesse_prompt})
-
+            with st.form("formulario"):
+                st.write("Obrigado por fornecer suas informações! Agora você pode iniciar a conversa com o consultor virtual.")
+                st.form_submit_button("Iniciar Conversa")
+                st.session_state.nome_usuario = nome.strip()
+                saudacao = gerar_saudacao_personalizada(st.session_state.nome_usuario, perfil, interesse)
+                st.session_state.messages.append({"role": "assistant", "content": saudacao})
+                #st.write("Digite sua pergunta sobre as máquinas Finamac no campo abaixo e pressione Enter.")
+                #st.text_input("Digite sua pergunta:", key="pergunta_usuario")
+                st.session_state.inicializado = True
+                st.session_state.historico_ia.append({"role": "system", "content": f"Usuário: {nome.strip()}, Email: {email.strip()}, WhatsApp: {whatsapp.strip()}, Perfil: {perfil.strip()}, Interesse: {interesse.strip()}"})
                 #st.form_submit_button("Obrigado! Agora você pode iniciar a conversa com o consultor virtual.") 
 
 else:
