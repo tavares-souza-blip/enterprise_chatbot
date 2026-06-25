@@ -236,19 +236,66 @@ def detectar_categoria(pergunta):
             {
                 "role": "system",
                 "content": f"""
-Escolha uma categoria real dentre:
+                Você deve escolher APENAS um dos slugs abaixo.
 
-{opcoes_permitidas}
+                {opcoes_permitidas}
 
-Se nenhuma servir responda apenas NONE.
+                REGRAS IMPORTANTES
 
-Responda SOMENTE com o slug da categoria.
-Exemplos:
+                Quando o usuário pedir:
 
-gelato -> gelato-batch-freezers
-sorvete -> ice-cream-batch-freezers
-açaí -> acai-frozen-bowl-equipment
-"""
+                - máquina de picolé
+                - máquinas de picolé
+                - produtora de picolé
+                - produtoras de picolé
+                - fabricar picolé
+                - produzir picolé
+
+                → responda SEMPRE:
+
+                ice-pops
+
+                Quando o usuário pedir:
+
+                - embaladora
+                - embalagem
+                - embalar picolé
+
+                → responda:
+
+                ice-pop-packaging-machines
+
+                Quando o usuário pedir:
+
+                - seladora
+
+                → responda:
+
+                ice-pop-sealing-machines
+
+                Quando o usuário pedir:
+
+                - tanque de desmolde
+
+                → responda:
+
+                ice-pop-unmolding-tanks
+
+                Quando o usuário pedir:
+
+                - pasteurizador
+
+                → responda:
+
+                pasteurization-heat-treatment-equipment
+
+                Se nenhuma categoria representar corretamente a intenção do usuário,
+                responda apenas:
+
+                NONE
+
+                Responda SOMENTE com o slug.
+                """            
             },
             {
                 "role": "user",
@@ -693,7 +740,7 @@ else:
                 #if produto_sugerido.lower() in categorias_genericas:
                 if any(termo in pesquisa_lower for termo in ["pasteuriz", "sorvete", "gelato", "picol", "acai", "chocolate"]):
                     categoria_detectada = detectar_categoria(pesquisa)              
-                    #st.sidebar.write("\nDEBUG categoria_detectada =", categoria_detectada)
+                    #st.write("\nDEBUG categoria_detectada =", categoria_detectada)
                     if categoria_detectada:
                         url_col = f"https://finamac.com/pt/collections/{categoria_detectada}"
                         prod_internos = obter_produtos_da_colecao(http_client, url_col)
@@ -794,6 +841,7 @@ else:
                         if cat:
                             url_col = f"https://finamac.com/pt/collections/{cat}"
                             prod_internos = obter_produtos_da_colecao(http_client, url_col)
+                            #st.write("DEBUG URL coleção =", url_col)
                             #st.write("DEBUG quantidade produtos =", len(prod_internos))
                             for p in prod_internos[:10]:
                                 st.write(" -", p["nome"])
@@ -809,7 +857,7 @@ else:
                             st.session_state.modelos_listados = [] 
                     else:
                         res_busca = buscar_produto(http_client, prod_ext)
-                        #st.write(res_busca)
+                        st.write(res_busca)
                         #st.write("DEBUG produto extraido =", produto_extraido)
                         p_urls, c_urls = res_busca.get("produtos", []), res_busca.get("colecoes", [])
 
