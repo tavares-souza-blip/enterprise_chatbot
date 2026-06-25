@@ -12,6 +12,37 @@ http_client = httpx.Client(
     follow_redirects=True
 )
 
+def extrair_variantes(soup):
+
+    variantes = {}
+
+    variant_selects = soup.find("variant-selects")
+
+    if not variant_selects:
+        return variantes
+
+    for fieldset in variant_selects.find_all("fieldset"):
+
+        legenda = fieldset.find("legend")
+
+        if not legenda:
+            continue
+
+        nome = legenda.get_text(" ", strip=True)
+
+        valores = []
+
+        for radio in fieldset.find_all("input", {"type": "radio"}):
+
+            valor = radio.get("value", "").strip()
+
+            if valor and valor not in valores:
+                valores.append(valor)
+
+        variantes[nome] = valores
+
+    return variantes
+
 def buscar_produto(http_client, nome_produto):
     busca = nome_produto.replace(" ", "+")
     url_busca = f"https://finamac.com/pt/search?q={busca}"
@@ -64,6 +95,7 @@ def obter_produto(http_client, url):
 
         titulo_tag = soup.find("h1")
         titulo = titulo_tag.text.strip() if titulo_tag else "Equipamento Finamac"
+        variantes = extrair_variantes(soup)
 
         preco_extraido = _extrair_preco_do_soup(soup)
         preco_formatado = f"USD {preco_extraido:,.2f}" if preco_extraido else "Sob Consulta / Não listado publicamente"
@@ -121,7 +153,8 @@ def obter_produto(http_client, url):
             "ficha_tecnica": ficha_tecnica_estruturada,
             "descricao": _ficha_para_texto(ficha_tecnica_estruturada),  # string para IA
             "url_original": url,
-            "tipo_schema": "produto"
+            "tipo_schema": "produto",
+            "variantes": variantes
         }
 
     except Exception as e:
@@ -130,7 +163,8 @@ def obter_produto(http_client, url):
             "preco": "Erro ao extrair",
             "ficha_tecnica": {"Erro": f"Falha crítica na extração dos dados: {str(e)}"},
             "url_original": url,
-            "tipo_schema": "produto"
+            "tipo_schema": "produto",
+            "variantes": []
         }
     
 def _ficha_para_texto(ficha: dict) -> str:
