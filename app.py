@@ -857,7 +857,7 @@ else:
                             st.session_state.modelos_listados = [] 
                     else:
                         res_busca = buscar_produto(http_client, prod_ext)
-                        st.write(res_busca)
+                        #st.write(res_busca)
                         #st.write("DEBUG produto extraido =", produto_extraido)
                         p_urls, c_urls = res_busca.get("produtos", []), res_busca.get("colecoes", [])
 
