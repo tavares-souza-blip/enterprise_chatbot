@@ -511,6 +511,28 @@ if not st.session_state.nome_usuario:
         email = st.text_input("Email: *")
 
         whatsapp = st.text_input("WhatsApp: *")
+        col1, col2 = st.columns([1, 4])
+
+        mask="(00) 00000-0000"
+
+        with col1:
+            ddi = st.selectbox(
+                "País",
+                ["+55", "+1", "+34", "+52", "+54"]
+            )
+        
+        with col2:
+            telefone = st.text_input(
+                "WhatsApp",
+                placeholder=mask
+            )
+        
+            if telefone and not re.match(r'^\(\d{2}\) \d{5}-\d{4}$', telefone):
+                st.error("Formato inválido. Use o formato (XX) XXXXX-XXXX.")
+                st.form_submit_button("Salvar")
+                st.stop()
+
+        whatsapp = f"{ddi} {telefone}"
 
         perfil = st.selectbox("Qual sua situação atual? *", 
                                ["Selecione uma opção", 
