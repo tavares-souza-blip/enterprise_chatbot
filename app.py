@@ -505,35 +505,63 @@ if "modelos_listados" not in st.session_state: st.session_state.modelos_listados
 if "nome_usuario" not in st.session_state: st.session_state.nome_usuario = None
 
 if not st.session_state.nome_usuario:
-    with st.form("formulario_vazio"):
-        nome = st.text_input("Nome: *")
 
+    DDIS = {
+    "Brasil": "+55",
+    "EUA": "+1",
+    "Espanha": "+34",
+    "México": "+52",
+    "Argentina": "+54"
+    }
+
+    pais = st.selectbox("País", list(DDIS.keys()))
+    ddi = DDIS[pais]
+
+
+    with st.form("formulario_vazio"):
+
+        nome = st.text_input("Nome: *")
         email = st.text_input("Email: *")
 
-        whatsapp = st.text_input("WhatsApp: *")
-        col1, col2 = st.columns([1, 4])
+        FORMATOS = {
+            "+55": {
+                "placeholder": "(00) 00000-0000",
+                "regex": r"^\(\d{2}\) \d{5}-\d{4}$",
+                "erro": "Formato inválido. Utilize (XX) XXXXX-XXXX."
+            },
+            "+1": {
+                "placeholder": "(000) 000-0000",
+                "regex": r"^\(\d{3}\) \d{3}-\d{4}$",
+                "erro": "Formato inválido. Utilize (XXX) XXX-XXXX."
+            },
+            "+34": {
+                "placeholder": "000 000 000",
+                "regex": r"^\d{3} \d{3} \d{3}$",
+                "erro": "Formato inválido. Utilize XXX XXX XXX."
+            },
+            "+52": {
+                "placeholder": "00 0000 0000",
+                "regex": r"^\d{2} \d{4} \d{4}$",
+                "erro": "Formato inválido. Utilize XX XXXX XXXX."
+            },
+            "+54": {
+                "placeholder": "00 0000-0000",
+                "regex": r"^\d{2} \d{4}-\d{4}$",
+                "erro": "Formato inválido. Utilize XX XXXX-XXXX."
+            }
+        }
 
-        mask="(00) 00000-0000"
+        #with col1:
+        #    pais = st.selectbox("País", list(DDIS.keys()))
+        #    ddi = DDIS[pais]
 
-        with col1:
-            ddi = st.selectbox(
-                "País",
-                ["+55", "+1", "+34", "+52", "+54"]
-            )
-        
-        with col2:
-            telefone = st.text_input(
-                "WhatsApp",
-                placeholder=mask
-            )
-        
-            if telefone and not re.match(r'^\(\d{2}\) \d{5}-\d{4}$', telefone):
-                st.error("Formato inválido. Use o formato (XX) XXXXX-XXXX.")
-                st.form_submit_button("Salvar")
-                st.stop()
+        telefone = st.text_input(
+            "WhatsApp: *",
+            placeholder=FORMATOS[ddi]["placeholder"]
+        )
 
         whatsapp = f"{ddi} {telefone}"
-
+        
         perfil = st.selectbox("Qual sua situação atual? *", 
                                ["Selecione uma opção", 
                                 "Quero abrir meu negócio", 
@@ -633,9 +661,23 @@ if not st.session_state.nome_usuario:
         st.session_state.perfil_cliente = perfil
         st.session_state.interesse_cliente = interesse
         submitted = st.form_submit_button("Salvar")
+        if submitted:
+            config = FORMATOS[ddi]
+
+            if not re.fullmatch(config["regex"], telefone):
+                st.error(config["erro"])
+                st.stop()
+        #if submitted:
+        #    digitos = re.sub(r"\D", "", telefone)
+        #    if ddi == "+55":
+        #    
+        #        if len(digitos) != 11:
+        #            st.error("O WhatsApp deve conter 11 dígitos.")
+        #            st.stop()
+        #        telefone = f"({digitos[:2]}) {digitos[2:7]}-{digitos[7:]}"
 
     if submitted: 
-        if not nome or not email or not whatsapp or not perfil or not interesse:
+        if not nome or not email or not telefone or not perfil or not interesse:
             st.error("Os campos são obrigatórios para iniciar o atendimento. Por favor, preencha todos os campos.")
             st.stop()
 
@@ -649,7 +691,7 @@ if not st.session_state.nome_usuario:
                 #st.write("Digite sua pergunta sobre as máquinas Finamac no campo abaixo e pressione Enter.")
                 #st.text_input("Digite sua pergunta:", key="pergunta_usuario")
                 st.session_state.inicializado = True
-                st.session_state.historico_ia.append({"role": "system", "content": f"Usuário: {nome.strip()}, Email: {email.strip()}, WhatsApp: {whatsapp.strip()}, Perfil: {perfil.strip()}, Interesse: {interesse.strip()}"})
+                st.session_state.historico_ia.append({"role": "system", "content": f"Usuário: {nome.strip()}, Email: {email.strip()}, WhatsApp: {telefone.strip()}, Perfil: {perfil.strip()}, Interesse: {interesse.strip()}"})
                 #st.form_submit_button("Obrigado! Agora você pode iniciar a conversa com o consultor virtual.") 
 
 else:
