@@ -64,9 +64,111 @@ CATEGORIAS_SLUGS_VALIDAS = {
     "finamac-courses": ["course", "courses", "curso", "cursos", "online", "practical", "prático", "training", "treinamento", "digital recipe book", "livro de receitas digital", "recipes", "receitas", "book", "livro"],
 }
 
+PALAVRAS_ENDERECO = [
+    "unidade",
+    "endereço",
+    "endereco",
+    "showroom",
+    "localização",
+    "localizacao",
+    "onde fica",
+    "maps",
+    "gps"
+]
+
+IDIOMAS = {
+    "Brasil": "pt",
+    "EUA": "en",
+    "Espanha": "es",
+    "México": "es",
+    "Argentina": "es",
+}
+
+TEXTOS = {
+    "pt": {
+        "pais": "País",
+        "nome": "Nome",
+        "email": "E-mail",
+        "telefone": "WhatsApp",
+        "salvar": "Salvar",
+        "perfil": "Qual sua situação atual? *",
+        "interesse": "O que você procura hoje? *",
+
+        "perfil_opcoes": [
+            "Selecione uma opção",
+            "Quero abrir meu negócio",
+            "Tenho revenda",
+            "Já produzo"
+        ],
+
+        "interesse_opcoes": [
+            "Selecione uma opção",
+            "Máquinas para sorvetes",
+            "Máquinas para picolés",
+            "Máquinas para açaí",
+            "Cursos e treinamentos",
+            "Peças e manutenção"
+        ]
+    },
+    "en": {
+        "pais": "Country",
+        "nome": "Name",
+        "email": "Email",
+        "telefone": "WhatsApp",
+        "salvar": "Save",
+        "perfil": "What best describes your current situation? *",
+        "interesse": "What are you looking for today? *",
+
+        "perfil_opcoes": [
+            "Select an option",
+            "I want to start my business",
+            "I have a resale business",
+            "I already produce"
+        ],
+
+        "interesse_opcoes": [
+            "Select an option",
+            "Ice cream machines",
+            "Ice pop machines",
+            "Açaí machines",
+            "Courses and training",
+            "Spare parts and maintenance"
+        ]
+    },
+    "es": {
+        "pais": "País",
+        "nome": "Nombre",
+        "email": "Correo electrónico",
+        "telefone": "WhatsApp",
+        "salvar": "Guardar",
+                "perfil": "¿Cuál es su situación actual? *",
+        "interesse": "¿Qué está buscando hoy? *",
+
+        "perfil_opcoes": [
+            "Seleccione una opción",
+            "Quiero abrir mi negocio",
+            "Tengo una revenda",
+            "Ya produzco"
+        ],
+
+        "interesse_opcoes": [
+            "Seleccione una opción",
+            "Máquinas para helados",
+            "Máquinas para paletas",
+            "Máquinas para açaí",
+            "Cursos y capacitaciones",
+            "Repuestos y mantenimiento"
+        ]
+    
+    }
+}
 # ─────────────────────────────────────────
 # LÓGICA DE NEGÓCIO E UTILITÁRIOS
 # ─────────────────────────────────────────
+# função adicionar_showroom corrigida — usa link_endereco do escopo
+def adicionar_showroom(resposta, link):
+    return resposta + f"\n\n📍 **Nossa unidade mais próxima:** {link}"
+
 def detectar_pais_usuario(pergunta: str, idioma: str) -> str:
     resposta = st.session_state.openai_client.chat.completions.create(
         model="gpt-4o-mini",
@@ -74,7 +176,7 @@ def detectar_pais_usuario(pergunta: str, idioma: str) -> str:
             {
                 "role": "system",
                 "content": (
-                    "Identifique o país de origem do usuário com base na mensagem e no idioma.\n"
+                    f"Responda SEMPRE em {idioma}.\n"
                     "Responda SOMENTE com o código ISO do país (ex: BR, US, ES, MX, AR).\n"
                     "Se não for possível identificar com segurança, responda: BR\n\n"
                     "Exemplos:\n"
@@ -336,11 +438,16 @@ def perguntar_ia(pergunta, produto, nome, idioma, contato):
             f"Especificações Técnicas (JSON): {ficha_json}\n"
             f"Link Original: {produto.get('url_original', 'https://finamac.com/pt')}\n"
             f"Contato autorizado: {contato}\n\n"
-        )    
+            f"Sempre que mencionar o endereço da Finamac, copie EXATAMENTE o texto recebido em \"Contato autorizado\".\n"
+            f"Não reescreva o endereço.\n"
+            f"Não remova o Markdown.\n"
+            f"Não substitua o link por texto simples.\n"
+            f"Sempre que indicar o showroom, copie exatamente o bloco {CONTATO_COMPLETO}\n\n"
+                )
     else:
         system_prompt = (
             f"Você é um consultor técnico da Finamac atendendo: {nome}.\n"
-            f"Idioma: {idioma}.\n\n"
+            f"Idioma OBRIGATÓRIO: {idioma}.\n\n"
             f"REGRA ABSOLUTA: As especificações detalhadas deste equipamento não estão disponíveis "
             f"no momento via scraping. NÃO invente dados técnicos. Se perguntado sobre potência, "
             f"peso ou capacidade, informe que não foi possível localizar e redirecione para: {contato}\n\n"
@@ -362,7 +469,8 @@ def perguntar_ia(pergunta, produto, nome, idioma, contato):
 def perguntar_ia_generico(pergunta, nome, catalogo_maquinas, idioma, contato):
     lista = "\n".join([f"- {item['nome']}" for item in catalogo_maquinas])
     system_prompt = (
-        f"Você é um consultor comercial da Finamac atendendo: {nome}.\nIdioma: {idioma}.\n\n"
+        f"Você é um consultor comercial da Finamac atendendo: {nome}.\n"
+        f"Idioma OBRIGATÓRIO: {idioma}.\n\n"
         f"EQUIPAMENTOS REAIS DISPONÍVEIS NO SITE:\n{lista}\n\n"
         f"Oriente o usuário de forma educada e prestativa a buscar por um desses segmentos ou modelos específicos da nossa linha de fabricação."
         f"Contato autorizado: {contato}."
@@ -381,7 +489,7 @@ def perguntar_ia_generico(pergunta, nome, catalogo_maquinas, idioma, contato):
 def perguntar_ia_lista_colecao(pergunta, nome, titulo_colecao, produtos_lista, idioma, contato):
     lista = "\n".join([f"{i+1}. {p['nome']}" for i, p in enumerate(produtos_lista)])
     system_prompt = (
-        f"Você é um consultor especializado da Finamac atendendo: {nome}.\nCategoria Atual: {titulo_colecao}.\nIdioma: {idioma}.\n\n"
+        f"Você é um consultor especializado da Finamac atendendo: {nome}.\nCategoria Atual: {titulo_colecao}.\nIdioma OBRIGATÓRIO: {idioma}.\n\n"
         f"MODELOS DISPONÍVEIS NESTA CATEGORIA:\n{lista}\n\n"
         f"Apresente a lista para o usuário de forma organizada em Markdown. Diga clara e explicitamente que ele pode escolher um modelo digitando o nome completo do equipamento ou indicando pela posição numérica na lista (ex: 'o primeiro', 'opção 3')."
         f"Contato autorizado: {contato}"
@@ -405,7 +513,7 @@ def detectar_idioma(pergunta: str) -> str:
             {
                 "role": "system",
                 "content": (
-                    "Detect the language of the sentence.\n"
+                    f"Answer ONLY in the language based on {{idioma}}.\n"
                     "Reply ONLY with: pt, en, or es."
                 )
             },
@@ -422,7 +530,7 @@ def detectar_idioma(pergunta: str) -> str:
 
 def gerar_saudacao_personalizada(nome, perfil, interesse):
 
-    if perfil == "Quero abrir meu negócio":
+    if f"{t('perfil')}" == "Quero abrir meu negócio":
 
         if interesse == "Máquinas para sorvetes":
             return (
@@ -514,14 +622,15 @@ if not st.session_state.nome_usuario:
     "Argentina": "+54"
     }
 
-    pais = st.selectbox("País", list(DDIS.keys()))
+    pais = st.selectbox("🌍 Country / País", list(DDIS.keys()))
     ddi = DDIS[pais]
-
+    idioma_usuario = IDIOMAS[pais]
 
     with st.form("formulario_vazio"):
-
-        nome = st.text_input("Nome: *")
-        email = st.text_input("Email: *")
+        t = TEXTOS[idioma_usuario]
+        
+        nome = st.text_input(f"{t['nome']}: *")
+        email = st.text_input(f"{t['email']}: *")
 
         FORMATOS = {
             "+55": {
@@ -556,7 +665,7 @@ if not st.session_state.nome_usuario:
         #    ddi = DDIS[pais]
 
         telefone = st.text_input(
-            "WhatsApp: *",
+            f"{t['telefone']}: *",
             placeholder=FORMATOS[ddi]["placeholder"]
         )
 
@@ -565,11 +674,9 @@ if not st.session_state.nome_usuario:
         perfil = st.selectbox("Qual sua situação atual? *", 
                                ["Selecione uma opção", 
                                 "Quero abrir meu negócio", 
-                                "Já produzo sorvetes",
-                                "Já produzo picolés",
-                                "Já trabalho com açaí",
-                                "Tenho fábrica de gelados",
-                                "Outro"])
+                                "Tenho revenda",
+                                "Já produzo",
+                                ])
         if perfil == "Selecione uma opção":  
             perfil = None
 
@@ -660,7 +767,7 @@ if not st.session_state.nome_usuario:
 
         st.session_state.perfil_cliente = perfil
         st.session_state.interesse_cliente = interesse
-        submitted = st.form_submit_button("Salvar")
+        submitted = st.form_submit_button(f"{t['salvar']}")
         if submitted:
             config = FORMATOS[ddi]
 
@@ -710,10 +817,11 @@ else:
         pais_usuario = detectar_pais_usuario(pesquisa, idioma_detectado)
         link_endereco = montar_link_endereco(pais_usuario)
 
-        CONTATO_COMPLETO = (
-            f"vendas@finamac.com.br ou +55 11 98846-5990 "
-            f"ou visite nossa unidade mais próxima: {link_endereco}"
-        )
+        CONTATO_COMPLETO = f"""
+        Email: vendas@finamac.com.br
+
+        WhatsApp: +55 11 98846-5990
+        """
 
         resposta_gerada = ""
 
@@ -959,6 +1067,11 @@ else:
                                 st.session_state.ultima_conversa = produto
 
                             resposta_gerada = perguntar_ia(pesquisa, produto, st.session_state.nome_usuario, idioma_detectado, CONTATO_COMPLETO)
+
+                            
+        if any(p in pesquisa.lower() for p in PALAVRAS_ENDERECO):
+            resposta_gerada = adicionar_showroom(resposta_gerada, link_endereco)
+
 
         st.session_state.messages.append({"role": "assistant", "content": resposta_gerada})
         st.session_state.historico_ia.append({"role": "user", "content": pesquisa})
