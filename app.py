@@ -535,24 +535,31 @@ def gerar_saudacao_personalizada(nome, perfil, interesse):
 
     if f"{t['perfil']}" == "Quero abrir meu negócio":
 
-        if interesse == "Máquinas para sorvetes":
+        if interesse == "Máquinas para Sorvetes/Açaí":
             return (
                 f"Prazer em te conhecer, {nome}! "
                 f"Vi que você pretende iniciar um negócio no setor de sorvetes. "
                 f"Você já tem uma estimativa de produção ou ainda está avaliando as opções disponíveis?"
             )
 
-        elif interesse == "Máquinas para picolés":
+        elif interesse == "Máquinas para Picolés/Gelo":
             return (
                 f"Prazer em te conhecer, {nome}! "
                 f"Vi que você deseja iniciar um negócio de picolés. "
                 f"Você está pensando em uma produção artesanal ou já busca uma operação com maior escala?"
             )
-
-        elif interesse == "Máquinas para açaí":
+        
+        elif interesse == "Máquinas para Gelato":
             return (
                 f"Prazer em te conhecer, {nome}! "
-                f"Vi que você quer abrir um negócio de açaí. "
+                f"Vi que você quer abrir um negócio de gelato. "
+                f"Você já tem experiência com o produto ou está começando do zero?"
+            )
+
+        elif interesse == "Máquinas para Chocolate":
+            return (
+                f"Prazer em te conhecer, {nome}! "
+                f"Vi que você quer abrir um negócio de chocolate. "
                 f"Você já tem experiência com o produto ou está começando do zero?"
             )
 
@@ -563,36 +570,51 @@ def gerar_saudacao_personalizada(nome, perfil, interesse):
                 f"Está buscando capacitação para iniciar seu negócio ou aprimorar suas habilidades existentes?"
             )
         
+        elif interesse == "Peças e manutenção":
+            return (
+                f"Prazer em te conhecer, {nome}! "
+                f"Vi que você tem interesse em peças e manutenção. "
+                f"Está buscando informações para manter seu equipamento em funcionamento ou planeja adquirir novos equipamentos?"
+            )
 
-    elif perfil == "Já produzo sorvetes":
+    elif perfil == "Já produzo":
 
-        return (
-            f"Prazer em te conhecer, {nome}! "
-            f"Como você já atua com sorvetes, posso ajudá-lo a encontrar equipamentos para ampliar produtividade, qualidade ou capacidade de produção. "
-            f"Qual é seu principal objetivo hoje?"
-        )
+        if interesse == "Máquinas para Sorvetes/Açaí" and interesse == "Máquinas para Picolés/Gelo" and interesse == "Máquinas para Gelato" and interesse == "Máquinas para Chocolate":
+            return (
+                f"Prazer em te conhecer, {nome}! "
+                f"Como você já atua no setor de sorvetes, posso ajudá-lo a encontrar equipamentos para ampliar produtividade, qualidade ou capacidade de produção. "
+                f"Qual é seu principal objetivo hoje?"
+            )
+        
+        elif interesse == "Cursos e treinamentos":
+            return (
+                f"Prazer em te conhecer, {nome}! "
+                f"Como você já atua no setor, posso ajudá-lo a encontrar cursos e treinamentos para aprimorar suas habilidades e conhecimentos. "
+                f"Qual é seu principal objetivo hoje?"
+            )
+        
+        elif interesse == "Peças e manutenção":
+            return (
+                f"Prazer em te conhecer, {nome}! "
+                f"Como você já atua no setor, posso ajudá-lo a encontrar equipamentos para ampliar produtividade, qualidade ou capacidade de produção. "
+                f"Qual é seu principal objetivo hoje?"
+            )
 
-    elif perfil == "Já produzo picolés":
+    elif perfil == "Tenho revenda":
 
-        return (
-            f"Prazer em te conhecer, {nome}! "
-            f"Como você já produz picolés, posso ajudá-lo com expansão de produção, automação ou novos equipamentos. "
-            f"Qual desafio você busca resolver?"
-        )
-
-    elif perfil == "Tenho fábrica de gelados":
-
-        return (
-            f"Prazer em te conhecer, {nome}! "
-            f"Entendi que você já possui uma operação estruturada no setor de gelados. "
-            f"Está buscando aumentar capacidade produtiva, modernizar equipamentos ou implantar novos processos?"
-        )
-
-    return (
-        f"Prazer em te conhecer, {nome}! "
-        f"Sou o consultor virtual da Finamac. Como posso ajudar no seu negócio de gelados hoje?"
-    )
-
+        if interesse == "Máquinas para Sorvetes/Açaí" and interesse == "Máquinas para Picolés/Gelo" and interesse == "Máquinas para Gelato" and interesse == "Máquinas para Chocolate":
+            return (
+                f"Prazer em te conhecer, {nome}! "
+                f"Como você possui uma revenda, posso ajudá-lo a encontrar informações sobre nossos produtos e condições de venda. "
+                f"Qual é seu principal objetivo hoje?"
+            )
+        elif interesse == "Cursos e treinamentos" and interesse == "Peças e manutenção":
+            return (
+                f"Prazer em te conhecer, {nome}! "
+                f"Como você possui uma revenda, posso ajudá-lo a encontrar informações sobre nossos produtos e condições de venda. "
+                f"Qual é seu principal objetivo hoje?"
+            )
+        
 # ─────────────────────────────────────────
 # INTERFACE E FLUXO DO STREAMLIT
 # ─────────────────────────────────────────
@@ -725,24 +747,25 @@ if not st.session_state.nome_usuario:
         if interesse == "Máquinas para Sorvetes/Açaí":
             interesse_prompt = f"""
         O usuário demonstra interesse em 
-        máquinas para produção de sorvetes.
+        máquinas para produção de sorvetes e açaí.
 
-        Pergunte para qual tipo de sorvete ele deseja produzir 
+        Pergunte para qual tipo de sorvete e açaí ele deseja produzir 
         (ex: artesanal, industrial, gelato, soft-serve) e 
         recomende máquinas adequadas a esse perfil, presentes
         nas {CATEGORIAS_SLUGS_VALIDAS} 
         """
             
-        elif interesse == "Máquinas para picolés":
+        elif interesse == "Máquinas para Picolés/Gelo":
             interesse_prompt = f"""
         O usuário demonstra interesse em 
-        máquinas para produção de picolés.
+        máquinas para produção de picolés e 
+        gelo saborizado.
 
         Recomende máquinas adequadas a esse perfil, presentes
         nas {CATEGORIAS_SLUGS_VALIDAS} 
         """
             
-        elif interesse == "Máquinas para açaí":
+        elif interesse == "Máquinas para Açaí":
             interesse_prompt = f"""
         O usuário demonstra interesse em 
         máquinas para produção de açaí.
@@ -751,6 +774,24 @@ if not st.session_state.nome_usuario:
         nas {CATEGORIAS_SLUGS_VALIDAS} 
         """
                         
+        elif interesse == "Máquinas para Gelato":
+            interesse_prompt = f"""
+        O usuário demonstra interesse em
+        máquinas para produção de gelato.
+
+        Recomende máquinas adequadas a esse perfil, presentes
+        nas {CATEGORIAS_SLUGS_VALIDAS}
+        """
+            
+        elif interesse == "Máquinas para Chocolate":
+            interesse_prompt = f"""
+        O usuário demonstra interesse em
+        máquinas para produção de chocolate.
+
+        Recomende máquinas adequadas a esse perfil, presentes
+        nas {CATEGORIAS_SLUGS_VALIDAS}
+        """
+            
         elif interesse == "Cursos e treinamentos":
             interesse_prompt = f"""
         O usuário demonstra interesse em 
@@ -830,11 +871,10 @@ else:
         pais_usuario = detectar_pais_usuario(pesquisa, idioma_detectado)
         link_endereco = montar_link_endereco(pais_usuario)
 
-        CONTATO_COMPLETO = f"""
-        Email: vendas@finamac.com.br
-
-        WhatsApp: +55 11 98846-5990
-        """
+        #CONTATO_COMPLETO = f"""
+        #Email: vendas@finamac.com.br
+        #WhatsApp: +55 11 98846-5990
+        #"""
 
         resposta_gerada = ""
 
