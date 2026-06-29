@@ -533,7 +533,7 @@ def detectar_idioma(pergunta: str) -> str:
 
 def gerar_saudacao_personalizada(nome, perfil, interesse):
 
-    if f"{t['perfil']}" == "Quero abrir meu negócio":
+    if perfil == "Quero abrir meu negócio":
 
         if interesse == "Máquinas para Sorvetes/Açaí":
             return (
@@ -579,7 +579,7 @@ def gerar_saudacao_personalizada(nome, perfil, interesse):
 
     elif perfil == "Já produzo":
 
-        if interesse == "Máquinas para Sorvetes/Açaí" and interesse == "Máquinas para Picolés/Gelo" and interesse == "Máquinas para Gelato" and interesse == "Máquinas para Chocolate":
+        if interesse == "Máquinas para Sorvetes/Açaí" or interesse == "Máquinas para Picolés/Gelo" or interesse == "Máquinas para Gelato" or interesse == "Máquinas para Chocolate":
             return (
                 f"Prazer em te conhecer, {nome}! "
                 f"Como você já atua no setor de sorvetes, posso ajudá-lo a encontrar equipamentos para ampliar produtividade, qualidade ou capacidade de produção. "
@@ -602,19 +602,24 @@ def gerar_saudacao_personalizada(nome, perfil, interesse):
 
     elif perfil == "Tenho revenda":
 
-        if interesse == "Máquinas para Sorvetes/Açaí" and interesse == "Máquinas para Picolés/Gelo" and interesse == "Máquinas para Gelato" and interesse == "Máquinas para Chocolate":
+        if interesse == "Máquinas para Sorvetes/Açaí" or interesse == "Máquinas para Picolés/Gelo" or interesse == "Máquinas para Gelato" or interesse == "Máquinas para Chocolate":
             return (
                 f"Prazer em te conhecer, {nome}! "
                 f"Como você possui uma revenda, posso ajudá-lo a encontrar informações sobre nossos produtos e condições de venda. "
                 f"Qual é seu principal objetivo hoje?"
             )
-        elif interesse == "Cursos e treinamentos" and interesse == "Peças e manutenção":
+        elif interesse == "Cursos e treinamentos" or interesse == "Peças e manutenção":
             return (
                 f"Prazer em te conhecer, {nome}! "
                 f"Como você possui uma revenda, posso ajudá-lo a encontrar informações sobre nossos produtos e condições de venda. "
                 f"Qual é seu principal objetivo hoje?"
             )
         
+    return (
+        f"Prazer em te conhecer, {nome}! "
+        f"Sou o consultor virtual da Finamac. Como posso ajudar no seu negócio de gelados hoje?"
+    )
+
 # ─────────────────────────────────────────
 # INTERFACE E FLUXO DO STREAMLIT
 # ─────────────────────────────────────────
@@ -715,22 +720,23 @@ if not st.session_state.nome_usuario:
         Priorize orientação consultiva.
         Sempre responda às perguntas do usuário com base no conteúdo do site da Finamac (https://finamac.com/).
         """
-        elif perfil in ["Já produzo sorvetes", "Já produzo picolés", "Já trabalho com açaí"]:
+        
+        elif perfil == "Tenho revenda":
+            perfil_prompt = """
+        O usuário possui uma revenda.
+
+        Explique os benefícios de cada produto.
+        Destaque as condições de venda.
+        Sempre responda às perguntas do usuário com base no conteúdo do site da Finamac (https://finamac.com/).
+        """
+
+        elif perfil == "Já produzo":
             perfil_prompt = """
         O usuário possui experiência prática.
 
         Use linguagem técnica moderada.
         Pode discutir produtividade, capacidade de produção e escalabilidade.
         Recomende máquinas adequadas ao nível de experiência do usuário.
-        Sempre responda às perguntas do usuário com base no conteúdo do site da Finamac (https://finamac.com/).
-        """
-        elif perfil == "Tenho fábrica de gelados":
-            perfil_prompt = """
-        O usuário possui experiência industrial.
-
-        Utilize linguagem técnica.
-        Pode discutir produtividade, pasteurização, homogeneização,
-        capacidade de produção e escalabilidade.
         Sempre responda às perguntas do usuário com base no conteúdo do site da Finamac (https://finamac.com/).
         """
         interesse = st.selectbox("O que você procura hoje? *",
