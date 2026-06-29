@@ -530,7 +530,7 @@ def detectar_idioma(pergunta: str) -> str:
 
 def gerar_saudacao_personalizada(nome, perfil, interesse):
 
-    if f"{t('perfil')}" == "Quero abrir meu negócio":
+    if f"{t['perfil']}" == "Quero abrir meu negócio":
 
         if interesse == "Máquinas para sorvetes":
             return (
@@ -769,12 +769,21 @@ if not st.session_state.nome_usuario:
         st.session_state.interesse_cliente = interesse
         submitted = st.form_submit_button(f"{t['salvar']}")
         if submitted:
-            config = FORMATOS[ddi]
 
-            if not re.fullmatch(config["regex"], telefone):
-                st.error(config["erro"])
+            if not telefone.strip():
+                st.error("Informe um número de WhatsApp.")
                 st.stop()
-        #if submitted:
+
+            digitos = re.sub(r"\D", "", telefone)
+
+            if ddi == "+55":
+                if len(digitos) != 11:
+                    st.error("O WhatsApp brasileiro deve conter 11 dígitos.")
+                    st.stop()
+
+                telefone = f"({digitos[:2]}) {digitos[2:7]}-{digitos[7:]}"
+
+            whatsapp = f"{ddi} {telefone}"        #if submitted:
         #    digitos = re.sub(r"\D", "", telefone)
         #    if ddi == "+55":
         #    
