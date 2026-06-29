@@ -103,12 +103,13 @@ TEXTOS = {
 
         "interesse_opcoes": [
             "Selecione uma opção",
-            "Máquinas para sorvetes",
-            "Máquinas para picolés",
-            "Máquinas para açaí",
+            "Máquinas para Sorvetes/Açaí",
+            "Máquinas para Picolés/Gelo",
+            "Máquinas para Gelato",
+            "Máquinas para Chocolate",
             "Cursos e treinamentos",
             "Peças e manutenção"
-        ]
+        ],
     },
     "en": {
         "pais": "Country",
@@ -128,11 +129,12 @@ TEXTOS = {
 
         "interesse_opcoes": [
             "Select an option",
-            "Ice cream machines",
-            "Ice pop machines",
-            "Açaí machines",
-            "Courses and training",
-            "Spare parts and maintenance"
+            "Ice Cream & Açaí Machines",
+            "Ice Pop & Ice Machines",
+            "Gelato Machines",
+            "Chocolate Machines",
+            "Courses and Training",
+            "Spare Parts and Maintenance"
         ]
     },
     "es": {
@@ -141,7 +143,7 @@ TEXTOS = {
         "email": "Correo electrónico",
         "telefone": "WhatsApp",
         "salvar": "Guardar",
-                "perfil": "¿Cuál es su situación actual? *",
+        "perfil": "¿Cuál es su situación actual? *",
         "interesse": "¿Qué está buscando hoy? *",
 
         "perfil_opcoes": [
@@ -153,11 +155,12 @@ TEXTOS = {
 
         "interesse_opcoes": [
             "Seleccione una opción",
-            "Máquinas para helados",
-            "Máquinas para paletas",
-            "Máquinas para açaí",
-            "Cursos y capacitaciones",
-            "Repuestos y mantenimiento"
+            "Máquinas para Helados y Açaí",
+            "Máquinas para paletas Heladas y Hielo",
+            "Máquinas para Gelato",
+            "Máquinas para Chocolate",
+            "Cursos y Capacitaciones",
+            "Repuestos y Mantenimiento"
         ]
     
     }
@@ -710,15 +713,16 @@ if not st.session_state.nome_usuario:
         """
         interesse = st.selectbox("O que você procura hoje? *",
                                 ["Selecione uma opção",
-                                "Máquinas para sorvetes",
-                                "Máquinas para picolés",
-                                "Máquinas para açaí",
+                                "Máquinas para Sorvetes/Açaí",
+                                "Máquinas para Picolés/Gelo",
+                                "Máquinas para Gelato",
+                                "Máquinas para Chocolate",
                                 "Cursos e treinamentos",
                                 "Peças e manutenção"])
         if interesse == "Selecione uma opção":  
             interesse = None
 
-        if interesse == "Máquinas para sorvetes":
+        if interesse == "Máquinas para Sorvetes/Açaí":
             interesse_prompt = f"""
         O usuário demonstra interesse em 
         máquinas para produção de sorvetes.
